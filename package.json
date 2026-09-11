@@ -1,0 +1,25 @@
+{
+  "name": "banana-launchpad",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "黄金香蕉发射台 —— 史上最贵香蕉（$45,000,000）的多概念多机制发币前端",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "ethers": "^6.13.5",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.28.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.4",
+    "typescript": "^5.6.3",
+    "vite": "^5.4.11"
+  }
+}
