@@ -1,22 +1,20 @@
-/** 全局配置：链上地址与环境变量 */
+/**
+ * 全局配置：链上地址与后端地址（硬编码，不依赖环境变量）。
+ * 后端地址留空 = 同源（前端与后端部署在同一域名/反向代理下时自动连通）。
+ */
 export const config = {
-  chainId: Number(import.meta.env.VITE_CHAIN_ID || 56),
-  nativeSymbol: String(import.meta.env.VITE_NATIVE_SYMBOL || "BNB"),
-  factoryAddress: String(
-    import.meta.env.VITE_MINT_FACTORY_ADDRESS ||
-      "0xE1CD783bcE52E8945B0FB539AA106aa35b08879e",
-  ),
-  rpcUrl: String(
-    import.meta.env.VITE_BSC_RPC_URL || "https://bsc.publicnode.com",
-  ),
+  chainId: 56,
+  nativeSymbol: "BNB",
+  factoryAddress: "0xE1CD783bcE52E8945B0FB539AA106aa35b08879e",
+  rpcUrl: "https://bsc.publicnode.com",
   /** 后端地址。留空 = 同源（dev 走 vite proxy /api） */
-  backendUrl: String(import.meta.env.VITE_BACKEND_URL || ""),
+  backendUrl: "",
   /** 靓号后缀，后端以链上 requiredTokenSuffix 为准，这里仅作默认展示 */
-  vanitySuffix: String(import.meta.env.VITE_VANITY_SUFFIX || "7777"),
+  vanitySuffix: "7777",
   /** 本地挖盐最大迭代（默认走后端矿机） */
-  vanityMaxIterations: Number(import.meta.env.VITE_VANITY_MAX_ITERATIONS || 600000),
+  vanityMaxIterations: 600000,
   /** 链上精确的 KimiMintToken creation bytecode（可选，来自服务器 pristine 文件） */
-  tokenCreationHex: String(import.meta.env.VITE_TOKEN_CREATION_HEX || ""),
+  tokenCreationHex: "",
   /** 默认分红代币（USDT on BSC） */
   defaultRewardToken: "0x55d398326f99059fF775485246999027B3197955",
 };

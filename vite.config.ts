@@ -9,7 +9,7 @@ export default defineConfig({
     proxy: {
       // 开发环境把后端 mine 接口代理过去，避免 CORS 与浏览器请求体限制问题
       "/api": {
-        target: process.env.VITE_BACKEND_TARGET || "http://localhost:8787",
+        target: "http://localhost:8787",
         changeOrigin: true,
       },
     },
