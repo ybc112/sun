@@ -39,7 +39,7 @@ export function BananaLogo({ size = 28, src = "/logo.jpg" }: { size?: number; sr
   );
 }
 
-/** 首页 Hero 大图（替换票券区视觉焦点） */
+/** 首页 Hero 大图（完全按原图比例显示，不裁切） */
 export function BananaHero({ src = "/hero.jpg", alt = "最贵香蕉 $45,000,000" }: { src?: string; alt?: string }) {
   const [errored, setErrored] = useState(false);
   if (errored) {
@@ -59,33 +59,18 @@ export function BananaHero({ src = "/hero.jpg", alt = "最贵香蕉 $45,000,000"
         width: "100%",
         maxWidth: "100%",
         height: "auto",
-        maxHeight: "min(80vh, 720px)",
-        objectFit: "cover",
-        objectPosition: "center",
-        aspectRatio: "3/4",
         border: "1px solid var(--ink)",
-        marginInline: "auto",
       }}
     />
   );
 }
 
-/** 内容插图（生态宣言 / 概念 / CTA 之间的全宽图） */
-export function BananaFigure({
-  src = "/figure.jpg",
-  alt = "BANANA 发射生态",
-  aspect = "16/9",
-  mobileAspect = "4/3",
-}: {
-  src?: string;
-  alt?: string;
-  aspect?: string;
-  mobileAspect?: string;
-}) {
+/** 内容插图（完全按原图比例显示，不裁切） */
+export function BananaFigure({ src = "/figure.jpg", alt = "BANANA 发射生态" }: { src?: string; alt?: string }) {
   const [errored, setErrored] = useState(false);
   if (errored) {
     return (
-      <div style={{ aspectRatio: aspect, border: "1px solid var(--ink)", display: "grid", placeItems: "center", background: "var(--paper-2)" }}>
+      <div style={{ aspectRatio: "3/4", border: "1px solid var(--ink)", display: "grid", placeItems: "center", background: "var(--paper-2)" }}>
         <BananaArt size={160} />
       </div>
     );
@@ -100,18 +85,8 @@ export function BananaFigure({
         width: "100%",
         maxWidth: "100%",
         height: "auto",
-        // 关键：移动端用更"方"的比例（窄屏不会变成一条线）
-        aspectRatio: mobileAspect,
-        // 双重保险：即使用户设备不支持 aspect-ratio，也不会失控
-        maxHeight: "min(80vh, 720px)",
-        objectFit: "cover",
-        objectPosition: "center",
         border: "1px solid var(--ink)",
-        // 把桌面端比例作为 CSS 变量，桌面端媒体查询用 var() 覆盖
-        // @ts-expect-error CSS 变量不在标准 CSSProperties 类型里
-        "--fig-aspect": aspect,
       }}
-      className="fig-adaptive"
     />
   );
 }
