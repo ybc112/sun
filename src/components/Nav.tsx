@@ -32,7 +32,7 @@ export function WalletButton() {
 const LINKS = [
   { to: "/", label: "首页", end: true },
   { to: "/launch", label: "发射台", end: false },
-  { to: "/projects", label: "项目银河", end: false },
+  { to: "/projects", label: "已发射代币", end: false },
 ];
 
 export function Nav() {
