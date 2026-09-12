@@ -1079,6 +1079,14 @@ textarea.input { min-height: 80px; resize: vertical; padding-top: 14px; }
   .range { gap: 8px; }
   .range > input[type="range"] { flex: 1.5; }
 }
+@media (min-width: 721px) {
+  /* 桌面端：用传入的 --fig-aspect 覆盖内联 mobileAspect */
+  .fig-adaptive[style*="--fig-aspect"] { aspect-ratio: var(--fig-aspect, 16/9) !important; }
+}
+/* 所有带 fig-adaptive 类的图（兜底）：移动端强制 4/3 */
+@media (max-width: 720px) {
+  .fig-adaptive { aspect-ratio: 4/3 !important; }
+}
 @media (max-width: 560px) {
   .project-grid { grid-template-columns: 1fr; }
   .project-card { border-right: 0; }

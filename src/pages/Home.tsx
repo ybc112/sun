@@ -143,7 +143,7 @@ export default function Home() {
             </h2>
           </div>
           <div style={{ marginTop: 48 }}>
-            <BananaFigure aspect="21/9" />
+            <BananaFigure aspect="21/9" mobileAspect="4/3" />
           </div>
         </div>
       </section>
