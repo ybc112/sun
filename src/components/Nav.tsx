@@ -1,7 +1,7 @@
 import { NavLink, Link } from "react-router-dom";
 import { useWallet } from "../wallet";
 import { fmtAddress } from "../config";
-import { BananaMark } from "./BananaArt";
+import { BananaLogo } from "./BananaArt";
 
 export function WalletButton() {
   const { account, connect, disconnect, connecting, error } = useWallet();
@@ -33,9 +33,11 @@ export function Nav() {
     <header className="nav">
       <div className="container nav-inner">
         <Link to="/" className="brand">
-          <span style={{ color: "var(--gold-deep)" }}><BananaMark size={18} /></span>
-          <span>Banana Mint</span>
-          <small>Gold Standard Edition</small>
+          <BananaLogo size={28} />
+          <span>
+            Banana Mint
+            <small>Gold Standard Edition</small>
+          </span>
         </Link>
         <nav className="nav-links">
           <NavLink to="/" end className={({ isActive }) => `nav-link ${isActive ? "active" : ""}`}>首页</NavLink>

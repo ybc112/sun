@@ -1,18 +1,18 @@
 import { Link } from "react-router-dom";
-import { BananaArt } from "../components/BananaArt";
+import { BananaHero, BananaFigure } from "../components/BananaArt";
 import { SectionTitle, Ticker } from "../components/ui";
 import { CONCEPTS, MECHANISMS } from "../lib/concepts";
 import { config, EXPLORER_BASE } from "../config";
 
 const TICKER = [
+  "BANANA 发射台强势启航",
+  "多元叙事 × 多概念融合 × 多机制玩法",
+  "多位币圈大佬 · 知名人士赞助助力",
+  "社区矩阵同步宣发 · 开盘热度拉满",
   "最贵香蕉 $45,000,000 成交",
   "地址后缀 0x7777 靓号铸造",
-  "24 小时退款险",
-  "持币自动分红",
-  "售罄 LP 永久锁死黑洞",
-  "每笔 Mint 自动做市",
-  "交易即燃烧 通缩循环",
-  "合约自动 BscScan 开源验证",
+  "24 小时退款险 · 持币自动分红",
+  "售罄 LP 永久锁死黑洞 · 合约自动开源验证",
 ];
 
 const TIMELINE = [
@@ -36,9 +36,9 @@ const TIMELINE = [
   },
   {
     year: "今天",
-    season: "应用",
-    title: "香蕉能量，现在可以用来发币",
-    body: "黄金香蕉发射台把这根史上最贵香蕉的流量与叙事，变成任何人一键上链发币的引擎。",
+    season: "上链",
+    title: "话题与流量，今天全部带到链上",
+    body: "一根香蕉，曾经因为天价艺术品交易轰动全球；今天，BANANA 把这根香蕉的话题与流量带上链——任何人一键发射自己的标的。",
   },
 ];
 
@@ -70,22 +70,30 @@ export default function Home() {
     <>
       <Ticker items={TICKER} />
 
-      {/* ===== Hero（编辑专栏感） ===== */}
+      {/* ===== Hero ===== */}
       <section className="hero">
         <div className="container">
           <div className="hero-grid">
             <div>
               <div className="hero-eyebrow">
-                <span>ISSUE 01</span>
-                <span>The $45M Banana</span>
+                <span>BANANA LAUNCHPAD</span>
+                <span>强势启航</span>
               </div>
               <h1>
-                最贵的一根香蕉
-                <span className="price">$45,000,000</span>
+                话题与流量，
+                <span className="price">上链</span>
               </h1>
               <p className="hero-lede">
-                一根香蕉被贴上墙、被买下、被吃掉、被估值到四千五百万美元。
-                现在它不再只是艺术品——它是 BSC 上任何人发射代币的引擎。
+                一根香蕉，曾经因为天价艺术品交易轰动全球；
+                今天，BANANA 把这份话题和流量带到链上。
+              </p>
+              <div className="flex gap-12" style={{ marginTop: 28, flexWrap: "wrap" }}>
+                <span className="tag tag-solid">多元叙事</span>
+                <span className="tag tag-solid">多概念融合</span>
+                <span className="tag tag-solid">多机制玩法</span>
+              </div>
+              <p className="serif" style={{ color: "var(--muted)", fontSize: 15, marginTop: 18, maxWidth: 540 }}>
+                多位币圈大佬、知名人士赞助助力；社区矩阵同步宣发，开盘热度全面拉满。
               </p>
               <div className="flex gap-12" style={{ marginTop: 36 }}>
                 <Link to="/launch" className="btn btn-primary">立即发射 →</Link>
@@ -111,26 +119,36 @@ export default function Home() {
               </div>
             </div>
 
-            <aside className="hero-ticket">
-              <div style={{ display: "flex", justifyContent: "space-between", fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: ".12em", textTransform: "uppercase", color: "var(--muted)", marginBottom: 16 }}>
+            <aside>
+              <BananaHero />
+              <div style={{ marginTop: 16, display: "flex", justifyContent: "space-between", fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: ".12em", textTransform: "uppercase", color: "var(--muted)" }}>
                 <span>NO. 01 / BANANA</span>
                 <span>EST. 2019</span>
-              </div>
-              <div className="ticket-row"><span>Title</span><b>Comedian</b></div>
-              <div className="ticket-row"><span>Artist</span><b>Maurizio Cattelan</b></div>
-              <div className="ticket-row"><span>Sale · 2019</span><b>$120,000</b></div>
-              <div className="ticket-row"><span>Sale · 2024</span><b>$6,200,000</b></div>
-              <div className="ticket-row"><span>Est. 2026</span><b style={{ color: "var(--gold-deep)" }}>$45,000,000</b></div>
-              <div className="ticket-stamp">★ CERTIFIED MEME ★</div>
-              <div style={{ marginTop: 24, textAlign: "center" }}>
-                <BananaArt size={140} />
               </div>
             </aside>
           </div>
         </div>
       </section>
 
-      {/* ===== 香蕉传奇时间线（编辑感） ===== */}
+      {/* ===== 生态宣言 ===== */}
+      <section className="section" style={{ paddingBlock: "72px" }}>
+        <div className="container">
+          <div style={{ maxWidth: 900 }}>
+            <div className="kicker" style={{ marginBottom: 24 }}>OUR ECOSYSTEM</div>
+            <h2 style={{ fontSize: "clamp(34px, 5vw, 64px)", lineHeight: 1.08, letterSpacing: "-0.03em" }}>
+              别人做的是一个项目，
+              <br />
+              BANANA 要做的是一个
+              <span className="serif" style={{ color: "var(--gold-deep)" }}>持续出新标的</span>的发射生态。
+            </h2>
+          </div>
+          <div style={{ marginTop: 48 }}>
+            <BananaFigure aspect="21/9" />
+          </div>
+        </div>
+      </section>
+
+      {/* ===== 香蕉传奇时间线 ===== */}
       <section className="section">
         <div className="container">
           <SectionTitle
@@ -155,13 +173,13 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ===== 声援墙（编辑感对谈） ===== */}
+      {/* ===== 声援墙 ===== */}
       <section className="section">
         <div className="container">
           <SectionTitle
-            number="§ 02 — Voices"
+            number="§ 02 — Sponsors"
             title={<>币圈大佬<br />都在聊的香蕉</>}
-            intro="以下为概念包装与致敬表达，非真实代言。"
+            intro="多位币圈大佬、知名人士赞助助力。以下为概念包装与致敬表达，非真实代言。"
           />
           <div className="voices">
             {VOICES.map((v) => (
@@ -177,13 +195,13 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ===== 概念（表格感） ===== */}
+      {/* ===== 概念 ===== */}
       <section className="section">
         <div className="container">
           <SectionTitle
             number="§ 03 — Concepts"
-            title={<>八个概念打法，<br />一个发射台</>}
-            intro="每个概念对应链上独立的 templateId。概念即身份，上链即认证。"
+            title={<>多元叙事<br />多概念融合</>}
+            intro="多元叙事 × 多概念融合 × 多机制玩法。每个概念对应链上独立的 templateId，概念即身份，上链即认证。"
           />
           <div className="concept-table">
             {CONCEPTS.map((c, i) => (
@@ -202,13 +220,13 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ===== 机制（密集列表） ===== */}
+      {/* ===== 机制 ===== */}
       <section className="section">
         <div className="container">
           <SectionTitle
             number="§ 04 — Mechanism"
-            title={<>机制自由组合，<br />拒绝千篇一律</>}
-            intro="从自动做市到 24 小时退款险，按你的叙事自由装配。"
+            title={<>多机制玩法，<br />拒绝千篇一律</>}
+            intro="从自动做市到 24 小时退款险，从持币分红到通缩燃烧，按你的叙事自由装配。"
           />
           <div className="mech-list">
             {MECHANISMS.map((m, i) => (
@@ -224,21 +242,21 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ===== CTA（编辑感广告位） ===== */}
+      {/* ===== CTA ===== */}
       <section className="section" style={{ background: "var(--ink)", color: "var(--paper)", borderBottom: 0 }}>
         <div className="container">
           <div style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr", gap: 80, alignItems: "end" }}>
             <div>
               <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: ".2em", textTransform: "uppercase", color: "var(--gold-bright)" }}>
-                § 05 — Your Turn
+                § 05 — The Launch
               </div>
               <h2 style={{ marginTop: 14, color: "var(--paper)" }}>
-                让全世界记住你的<br />
-                <span className="serif" style={{ color: "var(--gold-bright)" }}>第一根香蕉</span>
+                香蕉不缺话题，<br />
+                <span className="serif" style={{ color: "var(--gold-bright)" }}>BANANA 更不缺故事</span>
               </h2>
               <p className="hero-lede" style={{ color: "var(--paper-3)" }}>
-                连接钱包 → 选概念 → 配机制 → 靓号铸造 → 一键发射。
-                全程 BSC 链上，后端自动开源验证。
+                首发开盘，市场见真章。
+                社区矩阵同步宣发，开盘热度全面拉满——现在就来发射你的第一根香蕉。
               </p>
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 12, alignItems: "flex-start" }}>

@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { ZeroAddress, id as keccakId, parseUnits } from "ethers";
 import { useWallet } from "../wallet";
 import { useToast } from "../components/Toast";
+import { BananaLogo } from "../components/BananaArt";
 import { readFactory, switchToChain } from "../lib/chain";
 import { CONCEPTS } from "../lib/concepts";
 import { deployMintLaunch, type DeployResult } from "../lib/vanity";
