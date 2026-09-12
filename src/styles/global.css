@@ -1078,6 +1078,10 @@ textarea.input { min-height: 80px; resize: vertical; padding-top: 14px; }
   .w-grid-2 { grid-template-columns: 1fr; }
   .range { gap: 8px; }
   .range > input[type="range"] { flex: 1.5; }
+
+  /* 图片移动端：4/5 太窄，改 3/4 更适配屏幕宽度 */
+  .hero-grid aside img[alt*="香蕉"] { aspect-ratio: 3/4 !important; max-height: 60vh; }
+  .hero-grid aside img[alt*="BANANA"] { aspect-ratio: 3/4 !important; max-height: 60vh; }
 }
 @media (max-width: 560px) {
   .project-grid { grid-template-columns: 1fr; }

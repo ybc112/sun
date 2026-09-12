@@ -54,7 +54,16 @@ export function BananaHero({ src = "/hero.jpg", alt = "最贵香蕉 $45,000,000"
       src={src}
       alt={alt}
       onError={() => setErrored(true)}
-      style={{ display: "block", width: "100%", aspectRatio: "4/5", objectFit: "cover", border: "1px solid var(--ink)" }}
+      style={{
+        display: "block",
+        width: "100%",
+        // 移动端：限高 + 保持比例，避免窄屏被拉伸
+        maxHeight: "min(70vh, 520px)",
+        objectFit: "cover",
+        aspectRatio: "4/5",
+        border: "1px solid var(--ink)",
+        marginInline: "auto",
+      }}
     />
   );
 }
@@ -74,7 +83,15 @@ export function BananaFigure({ src = "/figure.jpg", alt = "BANANA 发射生态",
       src={src}
       alt={alt}
       onError={() => setErrored(true)}
-      style={{ display: "block", width: "100%", aspectRatio: aspect, objectFit: "cover", border: "1px solid var(--ink)" }}
+      style={{
+        display: "block",
+        width: "100%",
+        // 移动端：限高防过扁；桌面端按传入 aspect
+        maxHeight: "min(50vh, 420px)",
+        objectFit: "cover",
+        aspectRatio: aspect,
+        border: "1px solid var(--ink)",
+      }}
     />
   );
 }
