@@ -372,12 +372,12 @@ export default function Launch() {
 
   return (
     <section className="container" style={{ paddingBlock: 48 }}>
-      <div style={{ display: "flex", alignItems: "baseline", gap: 16, marginBottom: 24 }}>
+      <div className="hero-anim hero-anim-1" style={{ display: "flex", alignItems: "baseline", gap: 16, marginBottom: 24 }}>
         <span className="kicker">ISSUE 02</span>
         <span className="serif" style={{ color: "var(--muted)" }}>发射台</span>
       </div>
-      <h1 style={{ marginBottom: 16 }}>发射你的<span className="serif" style={{ color: "var(--gold-deep)" }}>第一根香蕉</span></h1>
-      <p className="serif" style={{ color: "var(--muted)", fontSize: 17, maxWidth: 640, marginBottom: 48 }}>
+      <h1 className="hero-anim hero-anim-2" style={{ marginBottom: 16 }}>发射你的<span className="serif goldline" style={{ color: "var(--gold-deep)" }}>第一根香蕉</span></h1>
+      <p className="serif hero-anim hero-anim-3" style={{ color: "var(--muted)", fontSize: 17, maxWidth: 640, marginBottom: 48 }}>
         选概念 → 配机制 → 一键部署。后端矿机自动挖 0x…{suffix} 靓号、部署后自动排队开源验证。
       </p>
 

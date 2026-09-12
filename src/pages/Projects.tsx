@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useProjects } from "../lib/data";
 import { CardSkeleton, ProgressBar, StatusBadge, Ticker } from "../components/ui";
+import { Reveal } from "../components/Reveal";
 import { conceptDisplay } from "../lib/concepts";
 import { readVault } from "../lib/chain";
 import type { LaunchProject } from "../types";
@@ -136,14 +137,16 @@ export default function Projects() {
 
         <div className="project-grid">
           {filtered.map((p, i) => (
-            <ProjectCard key={p.address} project={p} index={i} />
+            <Reveal key={p.address} delay={i % 3}>
+              <ProjectCard project={p} index={i} />
+            </Reveal>
           ))}
           {loading && [0, 1, 2].map((i) => <CardSkeleton key={i} />)}
         </div>
 
         {!done && !loading && (
           <div style={{ textAlign: "center", marginTop: 48 }}>
-            <button className="btn" onClick={() => void loadMore()}>加载更多 →</button>
+            <button className="btn" onClick={() => void loadMore()}>加载更多 <span className="arr">→</span></button>
           </div>
         )}
         {done && projects.length > 0 && (

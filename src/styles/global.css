@@ -1173,3 +1173,89 @@ textarea.input { min-height: 80px; resize: vertical; padding-top: 14px; }
 .mt-24 { margin-top: 24px; }
 .mt-32 { margin-top: 32px; }
 .mt-48 { margin-top: 48px; }
+
+/* ===== 滚动入场动画（编辑感克制淡入） ===== */
+.reveal {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity .8s cubic-bezier(.22,1,.36,1), transform .8s cubic-bezier(.22,1,.36,1);
+  will-change: opacity, transform;
+}
+.reveal.in {
+  opacity: 1;
+  transform: none;
+}
+.reveal.d1 { transition-delay: .08s; }
+.reveal.d2 { transition-delay: .16s; }
+.reveal.d3 { transition-delay: .24s; }
+.reveal.d4 { transition-delay: .32s; }
+.reveal.d5 { transition-delay: .4s; }
+.reveal.d6 { transition-delay: .48s; }
+.reveal.d7 { transition-delay: .56s; }
+.reveal.d8 { transition-delay: .64s; }
+
+/* ===== 金色细线强调（hover 时由左向右描金） ===== */
+.goldline {
+  position: relative;
+  display: inline-block;
+}
+.goldline::after {
+  content: "";
+  position: absolute;
+  left: 0; right: 100%;
+  bottom: -6px;
+  height: 2px;
+  background: linear-gradient(90deg, var(--gold-deep), var(--gold-bright));
+  transition: right .45s cubic-bezier(.22,1,.36,1);
+}
+.goldline:hover::after { right: 0; }
+
+/* ===== 旋转印章（杂志压印感） ===== */
+.stamp-spin {
+  width: 118px;
+  height: 118px;
+  animation: stamp-rotate 26s linear infinite;
+  user-select: none;
+}
+@keyframes stamp-rotate {
+  to { transform: rotate(360deg); }
+}
+
+/* ===== 按钮微动效：箭头右移 ===== */
+.btn .arr {
+  display: inline-block;
+  transition: transform .25s cubic-bezier(.22,1,.36,1);
+}
+.btn:hover .arr { transform: translateX(4px); }
+
+/* ===== 卡片 hover：细金描边推进 ===== */
+.card-hover { position: relative; }
+.card-hover::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border: 1px solid transparent;
+  transition: border-color .25s;
+  pointer-events: none;
+}
+.card-hover:hover::before { border-color: var(--gold-deep); }
+
+/* ===== Hero 入场（轻微上浮） ===== */
+@keyframes hero-rise {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: none; }
+}
+.hero-anim { animation: hero-rise .9s cubic-bezier(.22,1,.36,1) both; }
+.hero-anim-1 { animation-delay: .08s; }
+.hero-anim-2 { animation-delay: .18s; }
+.hero-anim-3 { animation-delay: .3s; }
+.hero-anim-4 { animation-delay: .42s; }
+.hero-anim-5 { animation-delay: .56s; }
+.hero-anim-6 { animation-delay: .7s; }
+
+/* ===== 尊重系统"减弱动态"偏好 ===== */
+@media (prefers-reduced-motion: reduce) {
+  .reveal { opacity: 1; transform: none; transition: none; }
+  .stamp-spin, .ticker-track, .hero-anim { animation: none; }
+  .btn:hover { transform: none; }
+}

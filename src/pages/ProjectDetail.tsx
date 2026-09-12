@@ -160,7 +160,7 @@ export default function ProjectDetail() {
     <section className="container" style={{ paddingBlock: 0 }}>
       {/* 头部 */}
       <div className="detail-head">
-        <div>
+        <div className="hero-anim hero-anim-1">
           <div className="dh-meta">
             <span>{concept.label}</span>
             <span>·</span>
