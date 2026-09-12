@@ -157,6 +157,72 @@ h3 { font-size: 22px; }
   background: var(--ink);
 }
 
+/* ===== 移动端：钱包 + 汉堡按钮 ===== */
+.nav-mobile {
+  display: none;
+  align-items: center;
+  gap: 12px;
+  margin-left: auto;
+}
+.nav-burger {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 5px;
+  width: 40px;
+  height: 40px;
+  padding: 9px;
+  border: 1px solid var(--ink);
+  border-radius: 2px;
+  background: transparent;
+  cursor: pointer;
+}
+.nav-burger span {
+  display: block;
+  height: 1px;
+  background: var(--ink);
+  transition: transform .2s, opacity .2s;
+}
+.nav-burger.open span:nth-child(1) { transform: translateY(6px) rotate(45deg); }
+.nav-burger.open span:nth-child(2) { opacity: 0; }
+.nav-burger.open span:nth-child(3) { transform: translateY(-6px) rotate(-45deg); }
+
+/* 移动端下拉面板：编辑感分栏 */
+.nav-dropdown {
+  display: grid;
+  max-height: 0;
+  overflow: hidden;
+  border-top: 0 solid var(--ink);
+  transition: max-height .28s ease, border-top .28s ease;
+  background: var(--paper);
+}
+.nav-dropdown.open {
+  max-height: 320px;
+  border-top: 1px solid var(--ink);
+}
+.nav-drop-item {
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--rule);
+  color: var(--muted);
+  font-size: 16px;
+  transition: color .15s, padding-left .15s;
+}
+.nav-drop-item:last-child { border-bottom: 0; }
+.nav-drop-item:hover { color: var(--ink); padding-left: 6px; }
+.nav-drop-item.active { color: var(--ink); font-weight: 600; }
+.nav-drop-item.active .nd-no { color: var(--gold-deep); }
+.nd-no {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: .12em;
+  color: var(--muted-3);
+  min-width: 24px;
+}
+.nd-label { letter-spacing: .02em; }
+
 /* ===== 按钮 ===== */
 .btn {
   display: inline-flex;
@@ -1071,6 +1137,9 @@ textarea.input { min-height: 80px; resize: vertical; padding-top: 14px; }
   .concept-list { grid-template-columns: repeat(2, 1fr); }
   .w-grid-3 { grid-template-columns: repeat(2, 1fr); }
   .nav-links { display: none; }
+  .nav-mobile { display: flex; }
+  /* 下拉面板贴住容器左右，避免贴屏边 */
+  .nav-dropdown { padding-inline: 3vw; }
   .section { padding: 64px 0; }
   .footer .colophon { grid-template-columns: repeat(2, 1fr); }
 }
@@ -1088,6 +1157,9 @@ textarea.input { min-height: 80px; resize: vertical; padding-top: 14px; }
   .tl-year { font-size: 28px; }
   .hero-meta { flex-wrap: wrap; gap: 16px; }
   .footer .colophon { grid-template-columns: 1fr; }
+  .brand small { display: none; }
+  .nav-mobile { gap: 8px; }
+  .nav-mobile .tag-solid { display: none; }
 }
 
 /* 实用类 */

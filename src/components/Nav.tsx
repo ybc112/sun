@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { NavLink, Link } from "react-router-dom";
 import { useWallet } from "../wallet";
 import { fmtAddress } from "../config";
@@ -28,23 +29,66 @@ export function WalletButton() {
   );
 }
 
+const LINKS = [
+  { to: "/", label: "首页", end: true },
+  { to: "/launch", label: "发射台", end: false },
+  { to: "/projects", label: "项目银河", end: false },
+];
+
 export function Nav() {
+  const [open, setOpen] = useState(false);
+
   return (
     <header className="nav">
       <div className="container nav-inner">
-        <Link to="/" className="brand">
+        <Link to="/" className="brand" onClick={() => setOpen(false)}>
           <BananaLogo size={28} />
           <span>
             Banana Mint
             <small>Gold Standard Edition</small>
           </span>
         </Link>
+
+        {/* 桌面端导航 */}
         <nav className="nav-links">
-          <NavLink to="/" end className={({ isActive }) => `nav-link ${isActive ? "active" : ""}`}>首页</NavLink>
-          <NavLink to="/launch" className={({ isActive }) => `nav-link ${isActive ? "active" : ""}`}>发射台</NavLink>
-          <NavLink to="/projects" className={({ isActive }) => `nav-link ${isActive ? "active" : ""}`}>项目银河</NavLink>
+          {LINKS.map((l) => (
+            <NavLink key={l.to} to={l.to} end={l.end} className={({ isActive }) => `nav-link ${isActive ? "active" : ""}`}>
+              {l.label}
+            </NavLink>
+          ))}
         </nav>
-        <WalletButton />
+
+        {/* 移动端：钱包 + 汉堡 */}
+        <div className="nav-mobile">
+          <WalletButton />
+          <button
+            type="button"
+            className={`nav-burger ${open ? "open" : ""}`}
+            aria-label="打开菜单"
+            aria-expanded={open}
+            onClick={() => setOpen((v) => !v)}
+          >
+            <span />
+            <span />
+            <span />
+          </button>
+        </div>
+      </div>
+
+      {/* 移动端下拉面板 */}
+      <div className={`nav-dropdown ${open ? "open" : ""}`}>
+        {LINKS.map((l, i) => (
+          <NavLink
+            key={l.to}
+            to={l.to}
+            end={l.end}
+            className={({ isActive }) => `nav-drop-item ${isActive ? "active" : ""}`}
+            onClick={() => setOpen(false)}
+          >
+            <span className="nd-no">0{i + 1}</span>
+            <span className="nd-label">{l.label}</span>
+          </NavLink>
+        ))}
       </div>
     </header>
   );
