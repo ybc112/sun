@@ -44,7 +44,7 @@ export function BananaHero({ src = "/hero.jpg", alt = "最贵香蕉 $45,000,000"
   const [errored, setErrored] = useState(false);
   if (errored) {
     return (
-      <div style={{ aspectRatio: "4/5", border: "1px solid var(--ink)", display: "grid", placeItems: "center", background: "var(--paper-2)" }}>
+      <div style={{ aspectRatio: "3/4", border: "1px solid var(--ink)", display: "grid", placeItems: "center", background: "var(--paper-2)" }}>
         <BananaArt size={200} />
       </div>
     );
@@ -57,9 +57,11 @@ export function BananaHero({ src = "/hero.jpg", alt = "最贵香蕉 $45,000,000"
       style={{
         display: "block",
         width: "100%",
-        // 移动端：限高 + 保持比例，避免窄屏被拉伸
-        maxHeight: "min(70vh, 520px)",
+        maxWidth: "100%",
+        height: "auto",
+        maxHeight: "min(80vh, 640px)",
         objectFit: "cover",
+        objectPosition: "center",
         aspectRatio: "4/5",
         border: "1px solid var(--ink)",
         marginInline: "auto",
@@ -86,9 +88,11 @@ export function BananaFigure({ src = "/figure.jpg", alt = "BANANA 发射生态",
       style={{
         display: "block",
         width: "100%",
-        // 移动端：限高防过扁；桌面端按传入 aspect
-        maxHeight: "min(50vh, 420px)",
+        maxWidth: "100%",
+        height: "auto",
+        maxHeight: "min(60vh, 480px)",
         objectFit: "cover",
+        objectPosition: "center",
         aspectRatio: aspect,
         border: "1px solid var(--ink)",
       }}
