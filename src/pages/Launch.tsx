@@ -9,7 +9,7 @@ import { CONCEPTS } from "../lib/concepts";
 import { deployMintLaunch, type DeployResult } from "../lib/vanity";
 import { uploadAsset } from "../lib/api";
 import type { LaunchParams } from "../types";
-import { config, EXPLORER_BASE } from "../config";
+import { config, EXPLORER_BASE, fmtAddress as fmtShort } from "../config";
 import { parseBNB } from "../lib/format";
 
 const STEPS = [
@@ -52,6 +52,12 @@ interface FormState {
   lpFeeBps: number;
   dividendFeeBps: number;
   burnFeeBps: number;
+  /** 接收钱包（默认=连接钱包） */
+  receiver: string;
+  /** 分红代币地址（默认 USDT） */
+  rewardToken: string;
+  /** 持仓分红门槛（代币数量） */
+  rewardThreshold: string;
 }
 
 const INITIAL: FormState = {
@@ -81,7 +87,24 @@ const INITIAL: FormState = {
   lpFeeBps: 0,
   dividendFeeBps: 0,
   burnFeeBps: 0,
+  receiver: "",
+  rewardToken: config.defaultRewardToken,
+  rewardThreshold: "0",
 };
+
+/** 分红代币地址归一化：空/无效回退 USDT */
+function normalizeRewardToken(value: string): string {
+  const v = String(value || "").trim();
+  return /^0x[0-9a-fA-F]{40}$/.test(v) ? v : config.defaultRewardToken;
+}
+
+/** 持仓门槛解析 */
+function parseRewardThreshold(value: string): bigint {
+  const v = String(value || "0").trim();
+  const n = Number(v);
+  if (!Number.isFinite(n) || n <= 0) return BigInt(0);
+  return parseBNB(v);
+}
 
 /** Canvas 压缩头像到 256×256 JPEG（对齐 KimiMint） */
 function compressAvatar(file: File): Promise<string> {
@@ -182,6 +205,14 @@ export default function Launch() {
   const set = <K extends keyof FormState>(key: K, value: FormState[K]) =>
     setForm((f) => ({ ...f, [key]: value }));
 
+  // 钱包连接后自动填入接收钱包（对齐 KimiMint）
+  useEffect(() => {
+    if (account && !form.receiver) {
+      set("receiver", account);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [account]);
+
   useEffect(() => {
     void (async () => {
       try {
@@ -226,6 +257,8 @@ export default function Launch() {
         return "白名单供应量不能超过可铸造数量";
       const wait = Number(form.claimWaitHours);
       if (form.claimWaitHours !== "" && (!Number.isFinite(wait) || wait < 0 || wait > 24)) return "退款等待需在 0-24 小时";
+      if (!/^0x[0-9a-fA-F]{40}$/.test(form.receiver || "")) return "请填写有效的接收钱包地址";
+      if (form.rewardToken && !/^0x[0-9a-fA-F]{40}$/.test(form.rewardToken)) return "分红代币地址无效（留空则用 USDT）";
     }
     if (s === 2) {
       if (form.buyTaxBps > BPS_MAX || form.sellTaxBps > BPS_MAX || form.transferTaxBps > BPS_MAX) return "买卖/转账税最高 25%";
@@ -288,9 +321,9 @@ export default function Launch() {
         mintPrice: parseBNB(form.mintPrice),
         maxMintPerWallet: BigInt(Number(form.maxMintPerWallet) || 0),
         paymentToken: ZeroAddress,
-        rewardToken: ZeroAddress,
-        rewardThreshold: BigInt(0),
-        receiver: account,
+        rewardToken: normalizeRewardToken(form.rewardToken),
+        rewardThreshold: parseRewardThreshold(form.rewardThreshold),
+        receiver: form.receiver || account,
         templateId,
         buyTaxBps: form.buyTaxBps,
         sellTaxBps: form.sellTaxBps,
@@ -545,6 +578,45 @@ export default function Launch() {
                   </div>
                 )}
               </div>
+
+              <div className="w-section">
+                <h3>接收与分红 / Receiver & Dividend</h3>
+                <div className="w-grid-2">
+                  <div className="field" style={{ gridColumn: "1 / -1" }}>
+                    <label>接收钱包</label>
+                    <input
+                      className="input mono"
+                      placeholder="0x…（默认=连接钱包）"
+                      value={form.receiver}
+                      onChange={(e) => set("receiver", e.target.value.trim())}
+                    />
+                    <div className="input-hint">Fund 资金池税收与结算收入将进入该地址。</div>
+                  </div>
+                  <div className="field">
+                    <label>分红代币地址</label>
+                    <input
+                      className="input mono"
+                      placeholder="默认 USDT"
+                      value={form.rewardToken}
+                      onChange={(e) => set("rewardToken", e.target.value.trim())}
+                    />
+                    <div className="input-hint">默认 USDT：{fmtShort(config.defaultRewardToken)}</div>
+                  </div>
+                  <div className="field">
+                    <label>持仓分红门槛（代币数量）</label>
+                    <input
+                      className="input"
+                      type="number"
+                      min={0}
+                      step="any"
+                      placeholder="0 = 无门槛"
+                      value={form.rewardThreshold}
+                      onChange={(e) => set("rewardThreshold", e.target.value)}
+                    />
+                    <div className="input-hint">持币达到该数量才参与自动分红。</div>
+                  </div>
+                </div>
+              </div>
             </>
           )}
 
@@ -617,6 +689,9 @@ export default function Launch() {
                       <div className="dl-row"><span>Per Mint</span><b className="mono">{perMint.toLocaleString()} 代币</b></div>
                       <div className="dl-row"><span>LP Reserve</span><b className="mono">50% 预留做市</b></div>
                       <div className="dl-row"><span>Refund</span><b className="mono">{form.claimWaitHours || 0}h 窗口</b></div>
+                      <div className="dl-row"><span>Receiver</span><b className="mono">{fmtShort(form.receiver || "—")}</b></div>
+                      <div className="dl-row"><span>Reward Token</span><b className="mono">{fmtShort(normalizeRewardToken(form.rewardToken))}</b></div>
+                      <div className="dl-row"><span>Threshold</span><b className="mono">{Number(form.rewardThreshold) > 0 ? form.rewardThreshold : "无门槛"}</b></div>
                       <div className="dl-row"><span>Avatar</span><b>{form.avatar ? "已上传" : "无"}</b></div>
                       <div className="dl-row"><span>Creation Fee</span><b className="mono">{creationFee} {config.nativeSymbol}</b></div>
                     </div>
