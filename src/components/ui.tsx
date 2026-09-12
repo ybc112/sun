@@ -89,9 +89,9 @@ export function CardSkeleton() {
         <span className="pc-no">···</span>
         <span className="pc-status">LOAD</span>
       </div>
-      <div style={{ height: 22, background: "var(--rule)", width: "60%", marginBottom: 16 }} />
-      <div style={{ height: 1, background: "var(--rule)" }} />
-      <div style={{ height: 12, background: "var(--rule)", width: "80%", marginTop: 12 }} />
+      <div style={{ height: 22, background: "var(--line-strong)", width: "60%", marginBottom: 16 }} />
+      <div style={{ height: 1, background: "var(--line)" }} />
+      <div style={{ height: 12, background: "var(--line-strong)", width: "80%", marginTop: 12 }} />
     </div>
   );
 }

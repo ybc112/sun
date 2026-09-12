@@ -44,42 +44,25 @@ const TIMELINE = [
 ];
 
 const VOICES = [
-  {
-    name: "Justin Sun · 孙晨宇",
-    role: "香蕉藏家",
-    quote: "这香蕉我吃定了。$45M 算什么，我有的是流动性。",
-  },
-  {
-    name: "CZ · 赵长鹏",
-    role: "币圈劳模",
-    quote: "香蕉比空气币实在——至少剥开能闻见味儿。",
-  },
-  {
-    name: "Vitalik Buterin",
-    role: "技术诗人",
-    quote: "我试过把香蕉写进 EIP，被社区否决了。整挺好。",
-  },
-  {
-    name: "Arthur Hayes",
-    role: "牛市预言家",
-    quote: "杠杆之后再啃口香蕉，回撤就不慌了。",
-  },
+  { name: "Justin Sun · 孙晨宇", role: "Banana Collector", quote: "这香蕉我吃定了。$45M 算什么，我有的是流动性。" },
+  { name: "CZ · 赵长鹏", role: "Binance", quote: "香蕉比空气币实在——至少剥开能闻见味儿。" },
+  { name: "Vitalik Buterin", role: "Ethereum", quote: "我试过把香蕉写进 EIP，被社区否决了。整挺好。" },
+  { name: "Arthur Hayes", role: "Macro Trader", quote: "杠杆之后再啃口香蕉，回撤就不慌了。" },
 ];
 
-/** 旋转印章：杂志压印感圆环文字 */
 function Stamp() {
   return (
-    <svg className="stamp-spin" viewBox="0 0 120 120" style={{ position: "absolute", bottom: -30, left: -30, opacity: 0.7, pointerEvents: "none" }} aria-hidden="true">
+    <svg className="stamp-spin" viewBox="0 0 140 140" style={{ position: "absolute", bottom: -36, left: -36, opacity: 0.55, pointerEvents: "none" }} aria-hidden="true">
       <defs>
-        <path id="stamp-circle" d="M 60,60 m -44,0 a 44,44 0 1,1 88,0 a 44,44 0 1,1 -88,0" fill="none" />
+        <path id="stamp-circle" d="M 70,70 m -50,0 a 50,50 0 1,1 100,0 a 50,50 0 1,1 -100,0" fill="none" />
       </defs>
-      <circle cx="60" cy="60" r="58" fill="none" stroke="var(--gold-deep)" strokeWidth="0.75" strokeDasharray="2 3" />
-      <text style={{ fontFamily: "var(--font-mono)", fontSize: 10.5, letterSpacing: ".18em", fill: "var(--gold-deep)", textTransform: "uppercase" }}>
+      <circle cx="70" cy="70" r="66" fill="none" stroke="var(--gold)" strokeWidth="0.5" strokeDasharray="2 3" />
+      <text style={{ fontFamily: "var(--font-mono)", fontSize: 9, letterSpacing: ".26em", fill: "var(--gold)", textTransform: "uppercase" }}>
         <textPath href="#stamp-circle">
           BANANA MINT · EST. 2019 · GOLD STANDARD · MMXXVI ·
         </textPath>
       </text>
-      <text x="60" y="66" textAnchor="middle" style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: 15, fill: "var(--ink)" }}>
+      <text x="70" y="78" textAnchor="middle" style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: 24, fill: "var(--gold-bright)" }}>
         ①
       </text>
     </svg>
@@ -98,44 +81,41 @@ export default function Home() {
             <div>
               <div className="hero-eyebrow hero-anim hero-anim-1">
                 <span>BANANA LAUNCHPAD</span>
-                <span>强势启航</span>
+                <span>GOLD STANDARD</span>
               </div>
               <h1 className="hero-anim hero-anim-2">
-                话题与流量，
-                <span className="price">上链</span>
+                话题与流量
+                <span className="price">$45,000,000</span>
               </h1>
               <p className="hero-lede hero-anim hero-anim-3">
-                一根香蕉，曾经因为天价艺术品交易轰动全球；
-                今天，BANANA 把这份话题和流量带到链上。
+                一根香蕉，曾经因为天价艺术品交易轰动全球；今天，BANANA 把这份话题和流量带到链上。
               </p>
               <div className="flex gap-12 hero-anim hero-anim-4" style={{ marginTop: 28, flexWrap: "wrap" }}>
-                <span className="tag tag-solid">多元叙事</span>
-                <span className="tag tag-solid">多概念融合</span>
-                <span className="tag tag-solid">多机制玩法</span>
+                <span className="tag">多概念</span>
+                <span className="tag">多机制</span>
+                <span className="tag">多玩法</span>
+                <span className="tag">社区矩阵</span>
               </div>
-              <p className="serif hero-anim hero-anim-4" style={{ color: "var(--muted)", fontSize: 15, marginTop: 18, maxWidth: 540 }}>
-                多位币圈大佬、知名人士赞助助力；社区矩阵同步宣发，开盘热度全面拉满。
-              </p>
               <div className="flex gap-12 hero-anim hero-anim-5" style={{ marginTop: 36 }}>
-                <Link to="/launch" className="btn btn-primary">立即发射 <span className="arr">→</span></Link>
-                <Link to="/projects" className="btn">浏览项目 <span className="arr">→</span></Link>
+                <Link to="/launch" className="btn btn-gold">立即发射 <span className="arr">→</span></Link>
+                <Link to="/projects" className="btn btn-ghost">浏览项目 <span className="arr">→</span></Link>
               </div>
-              <div className="hero-meta hero-anim hero-anim-6">
+              <div className="hero-stats hero-anim hero-anim-6">
                 <div>
-                  <b>8+</b>
-                  <span>概念模板</span>
+                  <b className="gold-num">8+</b>
+                  <span>Concept Templates</span>
                 </div>
                 <div>
-                  <b>0x7777</b>
-                  <span>靓号后缀</span>
+                  <b className="gold-num">0x7777</b>
+                  <span>Vanity Suffix</span>
                 </div>
                 <div>
                   <b>24h</b>
-                  <span>退款窗口</span>
+                  <span>Refund Window</span>
                 </div>
                 <div>
                   <b>100%</b>
-                  <span>LP 锁黑洞</span>
+                  <span>LP Locked</span>
                 </div>
               </div>
             </div>
@@ -143,7 +123,7 @@ export default function Home() {
             <aside className="hero-anim hero-anim-3" style={{ position: "relative" }}>
               <Stamp />
               <BananaHero />
-              <div style={{ marginTop: 16, display: "flex", justifyContent: "space-between", fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: ".12em", textTransform: "uppercase", color: "var(--muted)" }}>
+              <div style={{ marginTop: 20, display: "flex", justifyContent: "space-between", fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: ".18em", textTransform: "uppercase", color: "var(--paper-3)" }}>
                 <span>NO. 01 / BANANA</span>
                 <span>EST. 2019</span>
               </div>
@@ -153,23 +133,24 @@ export default function Home() {
       </section>
 
       {/* ===== 生态宣言 ===== */}
-      <section className="section" style={{ paddingBlock: "72px" }}>
+      <section className="section">
         <div className="container">
           <Reveal as="div">
-            <div style={{ maxWidth: 900 }}>
-              <div className="kicker" style={{ marginBottom: 24 }}>OUR ECOSYSTEM</div>
-              <h2 className="gold-rule" style={{ fontSize: "clamp(34px, 5vw, 64px)", lineHeight: 1.08, letterSpacing: "-0.03em" }}>
-                别人做的是一个项目，
-                <br />
-                BANANA 要做的是一个
-                <span className="serif goldline" style={{ color: "var(--gold-deep)" }}>持续出新标的</span>的发射生态。
-              </h2>
+            <div className="section-head">
+              <div>
+                <div className="kicker" style={{ marginBottom: 32 }}>OUR ECOSYSTEM</div>
+                <h2 style={{ fontSize: "clamp(40px, 6vw, 80px)" }}>
+                  别人做的是<br />
+                  <span className="serif goldline" style={{ color: "var(--gold-bright)" }}>一个项目</span>
+                </h2>
+              </div>
+              <p>
+                BANANA 要做的是一个持续出新标的的发射生态。多元叙事 × 多概念融合 × 多机制玩法——任何人都能带着自己的叙事，在三分钟内把一根香蕉的流量变成链上资产。
+              </p>
             </div>
           </Reveal>
           <Reveal delay={1}>
-            <div style={{ marginTop: 48 }}>
-              <BananaFigure />
-            </div>
+            <BananaFigure />
           </Reveal>
         </div>
       </section>
@@ -180,7 +161,7 @@ export default function Home() {
           <Reveal>
             <SectionTitle
               number="§ 01 — The Legend"
-              title={<>从 $6,200,000<br />到 $45,000,000</>}
+              title={<>从 $6.2M<br />到 $45,000,000</>}
               intro="一段关于「一根香蕉如何成为全球最贵 meme」的叙事，现在是你的项目入场券。"
             />
           </Reveal>
@@ -248,8 +229,8 @@ export default function Home() {
                   <small>{c.key.toUpperCase().replace(/-/g, " · ")}</small>
                 </span>
                 <span className="concept-tag">{c.tagline}</span>
-                <span style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: 14, color: "var(--muted)" }}>{c.desc}</span>
-                <span className="concept-arrow" style={{ transition: "transform .25s" }}>→</span>
+                <span style={{ fontFamily: "var(--font-serif)", fontStyle: "italic", fontSize: 15, color: "var(--paper-2)" }}>{c.desc}</span>
+                <span className="concept-arrow">→</span>
               </Link>
             ))}
           </div>
@@ -283,28 +264,25 @@ export default function Home() {
       </section>
 
       {/* ===== CTA ===== */}
-      <section className="section" style={{ background: "var(--ink)", color: "var(--paper)", borderBottom: 0 }}>
+      <section className="section" style={{ borderBottom: 0, background: "var(--ink-2)" }}>
         <div className="container">
           <Reveal>
             <div style={{ display: "grid", gridTemplateColumns: "1.4fr 1fr", gap: 80, alignItems: "end" }}>
               <div>
-                <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: ".2em", textTransform: "uppercase", color: "var(--gold-bright)" }}>
+                <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: ".24em", textTransform: "uppercase", color: "var(--gold-bright)", marginBottom: 32 }}>
                   § 05 — The Launch
                 </div>
-                <h2 style={{ marginTop: 14, color: "var(--paper)" }}>
+                <h2 style={{ color: "var(--paper)" }}>
                   香蕉不缺话题，<br />
                   <span className="serif goldline" style={{ color: "var(--gold-bright)" }}>BANANA 更不缺故事</span>
                 </h2>
-                <p className="hero-lede" style={{ color: "var(--paper-3)" }}>
-                  首发开盘，市场见真章。
-                  社区矩阵同步宣发，开盘热度全面拉满——现在就来发射你的第一根香蕉。
+                <p className="hero-lede" style={{ color: "var(--paper-2)", marginTop: 24 }}>
+                  首发开盘，市场见真章。社区矩阵同步宣发，开盘热度全面拉满——现在就来发射你的第一根香蕉。
                 </p>
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 12, alignItems: "flex-start" }}>
-                <Link to="/launch" className="btn btn-gold" style={{ background: "var(--gold)", borderColor: "var(--gold)", color: "var(--ink)" }}>
-                  开始发射 <span className="arr">→</span>
-                </Link>
-                <a className="btn" style={{ color: "var(--paper)", borderColor: "var(--paper)" }} href={`${EXPLORER_BASE}/address/${config.factoryAddress}`} target="_blank" rel="noreferrer">
+                <Link to="/launch" className="btn btn-gold">开始发射 <span className="arr">→</span></Link>
+                <a className="btn btn-ghost" href={`${EXPLORER_BASE}/address/${config.factoryAddress}`} target="_blank" rel="noreferrer">
                   查看 Factory 合约 <span className="arr">→</span>
                 </a>
               </div>
