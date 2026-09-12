@@ -200,30 +200,34 @@ export async function mineVanitySalt(
   return mineByBackend(creator, params, suffix);
 }
 
-/** 从交易回执解析 LaunchCreated 事件中的代币地址 */
-export function readLaunchCreatedToken(
+/** 从交易回执解析 LaunchCreated 事件中的代币地址与金库地址 */
+export function readLaunchCreated(
   receipt: { logs?: Array<{ address?: string; data: string; topics: string[] }> } | null | undefined,
-): string {
-  if (!receipt?.logs?.length) return "";
+): { token: string; vault: string } {
+  if (!receipt?.logs?.length) return { token: "", vault: "" };
   const iface = new Interface(factoryAbi);
   for (const log of receipt.logs) {
     if (log.address && log.address.toLowerCase() !== config.factoryAddress.toLowerCase()) continue;
     try {
       const parsed = iface.parseLog({ data: log.data, topics: log.topics });
-      if (parsed?.name === "LaunchCreated" && isAddress(String(parsed.args.token))) {
-        return String(parsed.args.token);
+      if (parsed?.name === "LaunchCreated") {
+        return {
+          token: isAddress(String(parsed.args.token)) ? String(parsed.args.token) : "",
+          vault: isAddress(String(parsed.args.vault)) ? String(parsed.args.vault) : "",
+        };
       }
     } catch {
       /* 非 Factory 日志 */
     }
   }
-  return "";
+  return { token: "", vault: "" };
 }
 
 export interface DeployResult {
   hash: string;
   salt: string;
   tokenAddress: string;
+  vaultAddress: string;
   predictedTokenAddress: string;
   vanitySuffix: string;
   vanityAttempts: number;
@@ -252,7 +256,7 @@ export async function deployMintLaunch(
   const tx = await factory.createLaunch(params, vanity.salt, { value: creationFeeWei });
   const receipt = await tx.wait();
 
-  const tokenAddress = readLaunchCreatedToken(receipt as never);
+  const { token: tokenAddress, vault: vaultAddress } = readLaunchCreated(receipt as never);
   if (!tokenAddress) {
     throw new Error("交易已上链，但未能在回执中解析出代币地址，请在区块浏览器确认");
   }
@@ -264,6 +268,7 @@ export async function deployMintLaunch(
     hash: tx.hash,
     salt: vanity.salt,
     tokenAddress,
+    vaultAddress,
     predictedTokenAddress: vanity.tokenAddress || "",
     vanitySuffix: vanity.suffix,
     vanityAttempts: vanity.attempts,

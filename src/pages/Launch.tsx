@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ZeroAddress, id as keccakId, parseUnits } from "ethers";
+import { Contract, ZeroAddress, id as keccakId, parseUnits } from "ethers";
+import type { Signer } from "ethers";
 import { useWallet } from "../wallet";
 import { useToast } from "../components/Toast";
 import { BananaLogo } from "../components/BananaArt";
-import { readFactory, switchToChain } from "../lib/chain";
+import { readFactory, switchToChain, vaultAbi } from "../lib/chain";
 import { CONCEPTS } from "../lib/concepts";
 import { deployMintLaunch, type DeployResult } from "../lib/vanity";
 import { uploadAsset } from "../lib/api";
@@ -40,6 +41,8 @@ interface FormState {
   maxMintPerWallet: string;
   whitelistEnabled: boolean;
   whitelistMintCount: string;
+  /** 白名单地址列表（每行一个，部署后批量写入金库） */
+  whitelistAddresses: string;
   claimWaitHours: string;
   buyTaxBps: number;
   sellTaxBps: number;
@@ -75,6 +78,7 @@ const INITIAL: FormState = {
   maxMintPerWallet: "0",
   whitelistEnabled: false,
   whitelistMintCount: "50000",
+  whitelistAddresses: "",
   claimWaitHours: "6",
   buyTaxBps: 0,
   sellTaxBps: 0,
@@ -91,6 +95,17 @@ const INITIAL: FormState = {
   rewardToken: config.defaultRewardToken,
   rewardThreshold: "0",
 };
+
+/** 解析白名单地址列表（逗号/空格/换行分隔，去重，最多 200） */
+function parseWhitelistAddresses(text: string): string[] {
+  const raw = String(text || "")
+    .replace(/[\s,;]+/g, " ")
+    .trim()
+    .split(" ")
+    .filter(Boolean);
+  return [...new Set(raw.map((a) => a.trim()).filter((a) => /^0x[0-9a-fA-F]{40}$/.test(a)))].slice(0, 200);
+}
+const whitelistCount = (text: string) => parseWhitelistAddresses(text).length;
 
 /** 分红代币地址归一化：空/无效回退 USDT */
 function normalizeRewardToken(value: string): string {
@@ -294,6 +309,20 @@ export default function Launch() {
     }
   };
 
+  /** 部署后批量写入白名单（对齐 KimiMint 金库 setWhitelistAllowances） */
+  const writeWhitelist = async (s: Signer, vault: string, accounts: string[]) => {
+    try {
+      const v = new Contract(vault, vaultAbi, s);
+      const allowances = accounts.map(() => BigInt(1));
+      const tx = await v.setWhitelistAllowances(accounts, allowances);
+      await tx.wait();
+      toast(`白名单已写入 ${accounts.length} 个地址`, "ok");
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "白名单写入失败";
+      if (!/user rejected|denied/i.test(msg)) toast(`白名单写入失败：${msg.slice(0, 80)}`, "err");
+    }
+  };
+
   const handleDeploy = async () => {
     if (!signer || !account) {
       toast("请先连接钱包", "err");
@@ -314,7 +343,7 @@ export default function Launch() {
       const metadataUri = await buildMetadata(form);
       const params: LaunchParams = {
         name: form.name.trim(),
-        symbol: form.symbol.trim().toUpperCase(),
+        symbol: form.symbol.trim(),
         metadataUri,
         totalSupply: BigInt(totalSupplyNum),
         mintCount: BigInt(Number(form.mintCount)),
@@ -343,6 +372,13 @@ export default function Launch() {
       const deployed = await deployMintLaunch(signer, params, suffix, parseUnits(creationFee, 18));
       setResult(deployed);
       toast("发射成功，已自动排队开源验证", "ok");
+      // 白名单地址批量写入金库（可选，失败不阻塞成功面板）
+      if (deployed.vaultAddress && form.whitelistEnabled && form.whitelistAddresses.trim()) {
+        const accounts = parseWhitelistAddresses(form.whitelistAddresses);
+        if (accounts.length > 0) {
+          void writeWhitelist(signer, deployed.vaultAddress, accounts);
+        }
+      }
     } catch (e) {
       const msg = e instanceof Error ? e.message : "部署失败";
       if (/user rejected|denied/i.test(msg)) toast("已取消签名", "info");
@@ -462,7 +498,7 @@ export default function Launch() {
                   </div>
                   <div className="field">
                     <label>符号 / Symbol</label>
-                    <input className="input" placeholder="BANANA" value={form.symbol} maxLength={12} onChange={(e) => set("symbol", e.target.value.toUpperCase())} />
+                    <input className="input" placeholder="Banana / BANANA" value={form.symbol} maxLength={12} onChange={(e) => set("symbol", e.target.value)} />
                   </div>
                 </div>
                 <div className="field" style={{ marginTop: 24 }}>
@@ -577,6 +613,23 @@ export default function Launch() {
                     <input className="input" type="number" min={1} value={form.whitelistMintCount} onChange={(e) => set("whitelistMintCount", e.target.value)} />
                   </div>
                 )}
+                {form.whitelistEnabled && (
+                  <div className="field" style={{ marginTop: 16 }}>
+                    <label>白名单地址（每行一个，部署后自动写入金库）</label>
+                    <textarea
+                      className="input mono"
+                      style={{ minHeight: 120, fontSize: 13 }}
+                      placeholder={"0x....\n0x....\n（可填多个，每行一个；留空则后续到详情页设置）"}
+                      value={form.whitelistAddresses}
+                      onChange={(e) => set("whitelistAddresses", e.target.value)}
+                    />
+                    <div className="input-hint">
+                      {whitelistCount(form.whitelistAddresses) > 0
+                        ? `已解析 ${whitelistCount(form.whitelistAddresses)} 个地址（最多 200 个）`
+                        : "部署成功后把白名单地址批量写入金库；未填可在项目详情页由创建者补充。"}
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="w-section">
@@ -681,7 +734,7 @@ export default function Launch() {
                   <div className="w-section">
                     <h3>摘要 / Summary</h3>
                     <div className="dl-list">
-                      <div className="dl-row"><span>Name</span><b>{form.name || "—"} ({form.symbol.toUpperCase() || "—"})</b></div>
+                      <div className="dl-row"><span>Name</span><b>{form.name || "—"} ({form.symbol || "—"})</b></div>
                       <div className="dl-row"><span>Concept</span><b>{CONCEPTS.find((c) => c.key === form.conceptKey)?.label}</b></div>
                       <div className="dl-row"><span>Total Supply</span><b className="mono">{form.totalSupply}</b></div>
                       <div className="dl-row"><span>Mintable</span><b className="mono">{form.mintCount}</b></div>
