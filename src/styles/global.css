@@ -1083,9 +1083,9 @@ textarea.input { min-height: 80px; resize: vertical; padding-top: 14px; }
   /* 桌面端：用传入的 --fig-aspect 覆盖内联 mobileAspect */
   .fig-adaptive[style*="--fig-aspect"] { aspect-ratio: var(--fig-aspect, 16/9) !important; }
 }
-/* 所有带 fig-adaptive 类的图（兜底）：移动端强制 4/3 */
+/* 所有带 fig-adaptive 类的图（兜底）：移动端强制 3/4（竖图比例，能看全） */
 @media (max-width: 720px) {
-  .fig-adaptive { aspect-ratio: 4/3 !important; }
+  .fig-adaptive { aspect-ratio: 3/4 !important; }
 }
 @media (max-width: 560px) {
   .project-grid { grid-template-columns: 1fr; }

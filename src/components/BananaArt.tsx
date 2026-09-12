@@ -59,10 +59,10 @@ export function BananaHero({ src = "/hero.jpg", alt = "最贵香蕉 $45,000,000"
         width: "100%",
         maxWidth: "100%",
         height: "auto",
-        maxHeight: "min(80vh, 640px)",
+        maxHeight: "min(80vh, 720px)",
         objectFit: "cover",
         objectPosition: "center",
-        aspectRatio: "4/5",
+        aspectRatio: "3/4",
         border: "1px solid var(--ink)",
         marginInline: "auto",
       }}
@@ -103,7 +103,7 @@ export function BananaFigure({
         // 关键：移动端用更"方"的比例（窄屏不会变成一条线）
         aspectRatio: mobileAspect,
         // 双重保险：即使用户设备不支持 aspect-ratio，也不会失控
-        maxHeight: "min(70vh, 560px)",
+        maxHeight: "min(80vh, 720px)",
         objectFit: "cover",
         objectPosition: "center",
         border: "1px solid var(--ink)",
