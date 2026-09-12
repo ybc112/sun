@@ -5,7 +5,8 @@
 export const config = {
   chainId: 56,
   nativeSymbol: "BNB",
-  factoryAddress: "0xE1CD783bcE52E8945B0FB539AA106aa35b08879e",
+  /** BANANA 专用 KimiMintLaunchFactory（2026-09-12 部署，全新空合约，后缀 0x7777） */
+  factoryAddress: "0x636E56b3c3DB1d2FeEff2526E00B877274d968Af",
   rpcUrl: "https://bsc.publicnode.com",
   /** 后端地址。留空 = 同源（dev 走 vite proxy /api） */
   backendUrl: "",
