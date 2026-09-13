@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { Contract } from "ethers";
 import { useWallet } from "../wallet";
 import { useToast } from "../components/Toast";
@@ -13,8 +13,32 @@ import { verifyStatus } from "../lib/api";
 
 const zero = BigInt(0);
 
+function CopyButton({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false);
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      /* 忽略 */
+    }
+  };
+  return (
+    <button
+      onClick={() => void copy()}
+      className="mono"
+      style={{ marginLeft: 10, border: "1px solid var(--rule)", padding: "2px 8px", fontSize: 10, color: copied ? "var(--gold-deep)" : "var(--muted)", background: "transparent", cursor: "pointer" }}
+      title="复制地址"
+    >
+      {copied ? "已复制" : "复制"}
+    </button>
+  );
+}
+
 export default function ProjectDetail() {
   const { address = "" } = useParams();
+  const navigate = useNavigate();
   const { account, signer, connect, chainId } = useWallet();
   const toast = useToast();
   const { project, vault, loading, error, refresh } = useProjectDetail(address, account);
@@ -26,6 +50,13 @@ export default function ProjectDetail() {
   const [txHash, setTxHash] = useState("");
   const [verifyJob, setVerifyJob] = useState<unknown>(null);
   const [unpaidDividend, setUnpaidDividend] = useState<bigint>(zero);
+  const [wlInput, setWlInput] = useState("");
+  const [savingWl, setSavingWl] = useState(false);
+  const [togglingWl, setTogglingWl] = useState(false);
+  const [wlCount, setWlCount] = useState(0);
+  const [wlAllowance, setWlAllowance] = useState<bigint | null>(null);
+  const [wlRemaining, setWlRemaining] = useState<bigint | null>(null);
+  const isCreator = Boolean(account && project && account.toLowerCase() === project.creator.toLowerCase());
 
   const concept = conceptDisplay(project?.templateId || "");
 
@@ -64,6 +95,31 @@ export default function ProjectDetail() {
     })();
     return () => { mounted = false; };
   }, [project?.vault, account, vault?.finalized, vault?.mintedCount]);
+
+  useEffect(() => {
+    let mounted = true;
+    if (!project?.vault) {
+      setWlAllowance(null);
+      setWlRemaining(null);
+      return;
+    }
+    void (async () => {
+      try {
+        const v = readVault(project.vault);
+        const [allowTotal, remaining] = await Promise.all([
+          v.totalWhitelistAllowance().catch(() => 0n),
+          account ? v.whitelistRemaining(account).catch(() => 0n) : 0n,
+        ]);
+        if (mounted) {
+          setWlAllowance(BigInt(allowTotal ?? 0));
+          setWlRemaining(BigInt(remaining ?? 0));
+        }
+      } catch {
+        /* 忽略 */
+      }
+    })();
+    return () => { mounted = false; };
+  }, [project?.vault, account, vault?.whitelistMintedCount, vault?.mintedCount]);
 
   useEffect(() => {
     void verifyStatus(address)
@@ -131,6 +187,70 @@ export default function ProjectDetail() {
     }
   };
 
+  /** 解析白名单地址输入（逗号/空格/换行分隔，去重，最多 200） */
+  const parseWl = (text: string): string[] =>
+    [
+      ...new Set(
+        String(text || "")
+          .replace(/[\s,;]+/g, " ")
+          .trim()
+          .split(" ")
+          .filter((a) => /^0x[0-9a-fA-F]{40}$/.test(a)),
+      ),
+    ].slice(0, 200);
+
+  const handleSaveWhitelist = async () => {
+    if (!signer || !project?.vault || !isCreator) return;
+    const accounts = parseWl(wlInput);
+    if (accounts.length === 0) {
+      toast("请填写至少一个有效地址（0x + 40 位十六进制）", "err");
+      return;
+    }
+    setSavingWl(true);
+    try {
+      const v = new Contract(project.vault, vaultAbi, signer);
+      const tx = await v.setWhitelistAllowances(accounts, accounts.map(() => BigInt(1)));
+      toast("白名单写入交易已广播…", "info");
+      const receipt = await tx.wait();
+      if (receipt?.status === 1) {
+        toast(`✅ 已写入 ${accounts.length} 个白名单地址`, "ok");
+        setWlInput("");
+        void refresh();
+      } else {
+        toast("交易上链但状态异常", "err");
+      }
+    } catch (e) {
+      const msg = e instanceof Error ? (e as { shortMessage?: string }).shortMessage || e.message : "白名单写入失败";
+      if (/user rejected|denied/i.test(msg)) toast("已取消签名", "info");
+      else toast(msg, "err");
+    } finally {
+      setSavingWl(false);
+    }
+  };
+
+  const handleToggleWhitelist = async () => {
+    if (!signer || !project?.vault || !isCreator || !vault) return;
+    setTogglingWl(true);
+    try {
+      const v = new Contract(project.vault, vaultAbi, signer);
+      const tx = await v.setWhitelistEnabled(!vault.whitelistEnabled);
+      toast("切换白名单模式交易已广播…", "info");
+      const receipt = await tx.wait();
+      if (receipt?.status === 1) {
+        toast(vault.whitelistEnabled ? "✅ 已关闭白名单" : "✅ 已开启白名单", "ok");
+        void refresh();
+      } else {
+        toast("交易上链但状态异常", "err");
+      }
+    } catch (e) {
+      const msg = e instanceof Error ? (e as { shortMessage?: string }).shortMessage || e.message : "切换失败";
+      if (/user rejected|denied/i.test(msg)) toast("已取消签名", "info");
+      else toast(msg, "err");
+    } finally {
+      setTogglingWl(false);
+    }
+  };
+
   if (loading && !project) {
     return (
       <section className="container" style={{ paddingBlock: 60 }}>
@@ -158,6 +278,11 @@ export default function ProjectDetail() {
 
   return (
     <section className="container" style={{ paddingBlock: 0 }}>
+      {/* 工具条 */}
+      <div className="flex between center" style={{ padding: "24px 0 8px" }}>
+        <button className="btn" onClick={() => navigate(-1)}>← 返回</button>
+        <button className="btn btn-sm" onClick={() => void refresh()} disabled={loading}>刷新 ↗</button>
+      </div>
       {/* 头部 */}
       <div className="detail-head">
         <div className="hero-anim hero-anim-1">
@@ -191,12 +316,14 @@ export default function ProjectDetail() {
               分红门槛 {fmtNumber(project.rewardThreshold, 18, 0)}
             </p>
           )}
-          <div style={{ display: "flex", gap: 20, marginTop: 20, flexWrap: "wrap" }}>
+          <div style={{ display: "flex", gap: 20, marginTop: 20, flexWrap: "wrap", alignItems: "center" }}>
             <AddressChip address={project.address} suffix={`…${project.address.slice(-4)}`} link={`${EXPLORER_BASE}/token/${project.address}`} />
-            <span className="serif" style={{ color: "var(--muted)", fontSize: 14 }}>代币</span>
+            <CopyButton text={project.address} />
+            <span className="serif" style={{ color: "var(--muted)", fontSize: 14 }}>代币合约</span>
           </div>
-          <div style={{ display: "flex", gap: 20, marginTop: 12, flexWrap: "wrap" }}>
+          <div style={{ display: "flex", gap: 20, marginTop: 12, flexWrap: "wrap", alignItems: "center" }}>
             <AddressChip address={project.vault} link={`${EXPLORER_BASE}/address/${project.vault}`} />
+            <CopyButton text={project.vault} />
             <span className="serif" style={{ color: "var(--muted)", fontSize: 14 }}>金库</span>
           </div>
         </div>
@@ -229,6 +356,53 @@ export default function ProjectDetail() {
             <div className="dl-row"><span>Distribution · Fund / LP / Div / Burn</span><b className="mono">{project.fundFeeBps / 100}% / {project.lpFeeBps / 100}% / {project.dividendFeeBps / 100}% / {project.burnFeeBps / 100}%</b></div>
           </div>
 
+          {isCreator && vault && !vault.finalized && (
+            <div style={{ marginTop: 48, borderTop: "1px solid var(--rule)", paddingTop: 32, maxWidth: 560 }}>
+              <div className="flex between center" style={{ marginBottom: 12 }}>
+                <span className="kicker" style={{ margin: 0 }}>Whitelist · 白名单管理</span>
+                <button
+                  className="btn btn-sm"
+                  onClick={() => void handleToggleWhitelist()}
+                  disabled={togglingWl || !chainId || chainId !== config.chainId}
+                >
+                  {togglingWl
+                    ? "广播中…"
+                    : vault.whitelistEnabled
+                      ? "关闭白名单"
+                      : "开启白名单"}
+                </button>
+              </div>
+              <p className="serif" style={{ color: "var(--muted)", fontSize: 14, marginBottom: 16 }}>
+                你是创建者（金库 Owner）。当前白名单阶段
+                {vault.whitelistEnabled ? "已开启" : "已关闭"}。写入白名单后，对应钱包即可在白名单阶段 Mint。
+              </p>
+              <div className="mono" style={{ fontSize: 12, color: "var(--muted)", letterSpacing: ".06em", marginBottom: 16 }}>
+                已添加 {wlAllowance !== null ? wlAllowance.toLocaleString() : "—"} 个地址 · 配额 {project.whitelistMintCount.toLocaleString()} 次 · 已售 {vault.whitelistMintedCount.toLocaleString()} 次
+              </div>
+              <textarea
+                className="input mono"
+                style={{ minHeight: 110, fontSize: 13 }}
+                placeholder={"0x....\n0x....\n（每行一个，最多 200 个；已写入的地址重复填入会跳过/覆盖，使用前可先确认链上列表）"}
+                value={wlInput}
+                onChange={(e) => {
+                  setWlInput(e.target.value);
+                  setWlCount(parseWl(e.target.value).length);
+                }}
+              />
+              <div className="input-hint" style={{ marginTop: 8 }}>
+                {wlCount > 0 ? `已解析 ${wlCount} 个有效地址` : "支持逗号 / 空格 / 换行分隔"}
+              </div>
+              <button
+                className="btn btn-primary"
+                style={{ marginTop: 12 }}
+                onClick={() => void handleSaveWhitelist()}
+                disabled={savingWl || !chainId || chainId !== config.chainId}
+              >
+                {savingWl ? "广播中…" : wlCount > 0 ? `写入 ${wlCount} 个地址 →` : "写入白名单 →"}
+              </button>
+            </div>
+          )}
+
           <p className="serif" style={{ color: "var(--muted)", fontSize: 13, lineHeight: 1.7, marginTop: 32, maxWidth: 640 }}>
             参与即表示你理解 Meme 代币的风险：价格可能归零、退款仅在未售罄且退款窗口内生效、锁池发生在售罄 finalize 时。
             DCA、DYOR。本页数据来自 BSC 链上实时读取，交易经由你的钱包签名，私钥永不上传。
@@ -254,6 +428,11 @@ export default function ProjectDetail() {
               WHITELIST PHASE {account && vault.whitelisted ? "· YOU'RE IN" : "· WALLET NOT LISTED"}
             </div>
           )}
+          {vault?.whitelistEnabled && account && vault.whitelisted && wlRemaining !== null && (
+            <div className="mono" style={{ fontSize: 11, color: "var(--gold-deep)", marginBottom: 16, letterSpacing: ".06em" }}>
+              白名单剩余份额 {wlRemaining.toLocaleString()} 份
+            </div>
+          )}
 
           {account && project.dividendFeeBps > 0 && (
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", padding: "12px 0", borderTop: "1px solid var(--rule)", borderBottom: "1px solid var(--rule)", marginBottom: 16, fontFamily: "var(--font-mono)", fontSize: 11, letterSpacing: ".08em", textTransform: "uppercase", color: "var(--muted)" }}>
@@ -264,7 +443,26 @@ export default function ProjectDetail() {
             </div>
           )}
 
-          {account && vault && !vault.finalized && !soldOut ? (
+          {vault?.finalized ? (
+            <>
+              <p className="serif" style={{ fontSize: 15, lineHeight: 1.6, padding: 16, border: "1px solid var(--ink)" }}>
+                ✅ 发射已完成：LP 已锁黑洞，代币已流通，进入二级市场交易阶段。
+              </p>
+              <a
+                className="btn btn-primary btn-block"
+                style={{ marginTop: 12 }}
+                href={`https://pancakeswap.finance/swap?outputCurrency=${project.address}`}
+                target="_blank"
+                rel="noreferrer"
+              >
+                去 PancakeSwap 交易 →
+              </a>
+            </>
+          ) : account && soldOut ? (
+            <p className="serif" style={{ fontSize: 15, lineHeight: 1.6, padding: 16, border: "1px solid var(--ink)" }}>
+              全部 Mint 已售罄，进入 finalize / 锁池流程。
+            </p>
+          ) : account && vault ? (
             <>
               <div className="qty">
                 <button onClick={() => setQty((q) => Math.max(1, q - 1))}>−</button>
@@ -288,14 +486,6 @@ export default function ProjectDetail() {
                 {minting ? "广播中…" : "立即铸造 →"}
               </button>
             </>
-          ) : account && vault?.finalized ? (
-            <p className="serif" style={{ fontSize: 15, lineHeight: 1.6, padding: 16, border: "1px solid var(--ink)" }}>
-              ✅ 发射已完成：LP 已锁黑洞，代币已流通，进入二级市场交易阶段。
-            </p>
-          ) : account && soldOut ? (
-            <p className="serif" style={{ fontSize: 15, lineHeight: 1.6, padding: 16, border: "1px solid var(--ink)" }}>
-              全部 Mint 已售罄，进入 finalize / 锁池流程。
-            </p>
           ) : (
             <button className="btn btn-primary btn-block" onClick={() => void connect()}>连接钱包开始铸造</button>
           )}

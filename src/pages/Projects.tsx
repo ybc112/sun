@@ -11,11 +11,40 @@ import { EXPLORER_BASE, config } from "../config";
 
 const zero = BigInt(0);
 
+/** 复制按钮（对齐 KimiMint 列表体验） */
+function CopyButton({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false);
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      /* 忽略 */
+    }
+  };
+  return (
+    <button
+      onClick={(e) => {
+        e.preventDefault();
+        void copy();
+      }}
+      style={{ marginLeft: 8, border: "1px solid var(--rule)", padding: "1px 6px", fontSize: 10, fontFamily: "var(--font-mono)", color: copied ? "var(--gold-deep)" : "var(--muted)", cursor: "pointer", background: "transparent" }}
+      title="复制地址"
+    >
+      {copied ? "COPIED" : "COPY"}
+    </button>
+  );
+}
+
 function ProjectCard({ project, index }: { project: LaunchProject; index: number }) {
   const [progress, setProgress] = useState<number | null>(null);
   const [minted, setMinted] = useState<bigint | null>(null);
   const [finalized, setFinalized] = useState<boolean | null>(null);
   const [refundDeadline, setRefundDeadline] = useState<bigint | null>(null);
+  const [wlEnabled, setWlEnabled] = useState(false);
+  const [wlMinted, setWlMinted] = useState("—");
+  const [pubMinted, setPubMinted] = useState("—");
   const concept = conceptDisplay(project.templateId);
 
   useEffect(() => {
@@ -23,16 +52,22 @@ function ProjectCard({ project, index }: { project: LaunchProject; index: number
     void (async () => {
       try {
         const vault = readVault(project.vault);
-        const [finalizedRaw, totalMints, mintedCount, deadline] = await Promise.all([
+        const [finalizedRaw, totalMints, mintedCount, deadline, wlOn, wlMintedRaw, pubMintedRaw] = await Promise.all([
           vault.finalized(),
           vault.totalMints(),
           vault.mintedCount(),
           vault.refundDeadline(),
+          vault.whitelistEnabled(),
+          vault.whitelistMintedCount().catch(() => 0n),
+          vault.publicMintedCount().catch(() => 0n),
         ]);
         if (!mounted) return;
         setFinalized(Boolean(finalizedRaw));
         setMinted(BigInt(mintedCount ?? 0));
         setRefundDeadline(BigInt(deadline ?? 0));
+        setWlEnabled(Boolean(wlOn));
+        setWlMinted(BigInt(wlMintedRaw ?? 0).toLocaleString() + "/" + project.whitelistMintCount.toLocaleString());
+        setPubMinted(BigInt(pubMintedRaw ?? 0).toLocaleString() + "/" + (project.mintCount - project.whitelistMintCount).toLocaleString());
         const total = BigInt(totalMints ?? 1);
         setProgress(total > zero ? Number((BigInt(mintedCount ?? 0) * BigInt(10000)) / total) : 0);
       } catch {
@@ -78,13 +113,36 @@ function ProjectCard({ project, index }: { project: LaunchProject; index: number
         <span>Minted</span>
         <b className="mono">{minted !== null ? minted.toLocaleString() : "—"} <span style={{ color: "var(--muted)" }}>/ {project.mintCount.toLocaleString()}</span></b>
       </div>
+      {wlEnabled && (
+        <div className="pc-row">
+          <span>白名单 · 公开</span>
+          <b className="mono" style={{ fontSize: 12 }}>{wlMinted} · {pubMinted}</b>
+        </div>
+      )}
       <div className="pc-row">
         <span>Price</span>
         <b className="mono">{fmtPrice(project.mintPrice)} {config.nativeSymbol}</b>
       </div>
+      <div className="pc-row">
+        <span>Vault</span>
+        <b className="mono" style={{ fontSize: 12 }}>0x…{project.vault.slice(-4)}<CopyButton text={project.vault} /></b>
+      </div>
       <div className="pc-foot">
-        <span>0x…{project.address.slice(-4)}</span>
-        <span>{progress !== null ? `${(progress / 100).toFixed(1)}%` : "…"}</span>
+        <span>0x…{project.address.slice(-4)}<CopyButton text={project.address} /></span>
+        <span style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          {finalized && (
+            <a
+              href={`https://pancakeswap.finance/swap?outputCurrency=${project.address}`}
+              target="_blank"
+              rel="noreferrer"
+              style={{ color: "var(--gold-deep)", borderBottom: "1px solid var(--gold-deep)" }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              交易 →
+            </a>
+          )}
+          <span>{progress !== null ? `${(progress / 100).toFixed(1)}%` : "…"}</span>
+        </span>
       </div>
     </Link>
   );
@@ -118,7 +176,7 @@ export default function Projects() {
           </p>
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 32, borderBottom: "1px solid var(--ink)", paddingBottom: 16 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 24, borderBottom: "1px solid var(--ink)", paddingBottom: 16 }}>
           <span className="mono" style={{ fontSize: 11, letterSpacing: ".12em", textTransform: "uppercase", color: "var(--muted)", flex: "none" }}>Search</span>
           <input
             className="input"
@@ -127,6 +185,13 @@ export default function Projects() {
             onChange={(e) => setKeyword(e.target.value)}
             style={{ maxWidth: 360 }}
           />
+          <span style={{ flex: 1 }} />
+          <button className="btn btn-sm" onClick={() => window.location.reload()}>
+            刷新 ↗
+          </button>
+          <Link to="/launch" className="btn btn-primary">
+            去发射 →
+          </Link>
         </div>
 
         {error && (

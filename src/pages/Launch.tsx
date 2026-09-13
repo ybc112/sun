@@ -36,14 +36,16 @@ interface FormState {
   xLink: string;
   website: string;
   totalSupply: string;
-  mintCount: string;
+  /** 公开铸造次数（对齐 KimiMint，mintCount = public + whitelist） */
+  publicMintCount: string;
+  /** 白名单铸造次数（>0 时自动启用白名单） */
+  whitelistMintCount: string;
   mintPrice: string;
   maxMintPerWallet: string;
   whitelistEnabled: boolean;
-  whitelistMintCount: string;
   /** 白名单地址列表（每行一个，部署后批量写入金库） */
   whitelistAddresses: string;
-  claimWaitHours: string;
+  claimWaitSeconds: string;
   buyTaxBps: number;
   sellTaxBps: number;
   transferTaxBps: number;
@@ -72,14 +74,14 @@ const INITIAL: FormState = {
   telegram: "",
   xLink: "",
   website: "",
-  totalSupply: "10000000",
-  mintCount: "200000",
+  totalSupply: "100000000",
+  publicMintCount: "270",
+  whitelistMintCount: "30",
   mintPrice: "0.00001",
-  maxMintPerWallet: "0",
+  maxMintPerWallet: "1",
   whitelistEnabled: false,
-  whitelistMintCount: "50000",
   whitelistAddresses: "",
-  claimWaitHours: "6",
+  claimWaitSeconds: "60",
   buyTaxBps: 0,
   sellTaxBps: 0,
   transferTaxBps: 0,
@@ -252,26 +254,37 @@ export default function Launch() {
     [form.conceptKey],
   );
 
-  const splitTotal = form.fundFeeBps + form.lpFeeBps + form.dividendFeeBps + form.burnFeeBps;
+  const allocationTotal = form.lpFeeBps + form.dividendFeeBps + form.burnFeeBps;
+  /** Fund 资金池为剩余项（对齐合约 _marketingSplitBps = 100% − lp − div − burn），四档总和恒为 100% */
+  const fundAutoBps = SPLIT_MAX - allocationTotal;
   const totalSupplyNum = Number(form.totalSupply) || 0;
   const saleSupply = Math.floor((totalSupplyNum * 5000) / 10000);
-  const perMint = form.mintCount ? Math.floor(saleSupply / (Number(form.mintCount) || 1)) : 0;
+  /** 总铸造次数 = 公开 + 白名单（对齐 KimiMint） */
+  const totalMintCount =
+    (Number(form.publicMintCount) || 0) + (Number(form.whitelistMintCount) || 0);
+  /** 白名单次数 > 0 即视为启用白名单 */
+  const whitelistEnabled =
+    form.whitelistEnabled || Number(form.whitelistMintCount) > 0;
+  const perMint = totalMintCount > 0 ? Math.floor(saleSupply / totalMintCount) : 0;
 
   const validate = (s: number): string | null => {
     if (s === 0) {
       if (!form.name.trim()) return "请填写代币名称";
       if (!/^[A-Za-z0-9]{2,12}$/.test(form.symbol.trim())) return "代币符号需为 2-12 位字母数字";
       if (!(totalSupplyNum > 0) || !Number.isInteger(totalSupplyNum)) return "总供应量需为正整数";
-      if (!(Number(form.mintCount) > 0) || !Number.isInteger(Number(form.mintCount))) return "可铸造数量需为正整数";
-      if (Number(form.mintCount) > totalSupplyNum) return "可铸造数量不能超过总供应量";
     }
     if (s === 1) {
       if (!(parseFloat(form.mintPrice) > 0)) return "铸造价格必须大于 0";
-      if (perMint < 1) return "可铸造数量过大，每个 Mint 分不到 1 枚代币";
-      if (form.whitelistEnabled && Number(form.whitelistMintCount) > Number(form.mintCount))
-        return "白名单供应量不能超过可铸造数量";
-      const wait = Number(form.claimWaitHours);
-      if (form.claimWaitHours !== "" && (!Number.isFinite(wait) || wait < 0 || wait > 24)) return "退款等待需在 0-24 小时";
+      if (!(totalMintCount > 0) || !Number.isInteger(Number(form.publicMintCount)) || !Number.isInteger(Number(form.whitelistMintCount)))
+        return "公开次数与白名单次数需为非负整数，且总和必须大于 0";
+      if (totalMintCount > totalSupplyNum) return "铸造总次数不能超过总供应量";
+      if (perMint < 1) return "铸造次数过大，每个 Mint 分不到 1 枚代币";
+      if (Number(form.whitelistMintCount) > totalMintCount)
+        return "白名单次数不能超过铸造总次数";
+      if (form.whitelistEnabled && !(Number(form.whitelistMintCount) > 0))
+        return "开启白名单时，白名单次数必须大于 0";
+      const wait = Number(form.claimWaitSeconds);
+      if (form.claimWaitSeconds !== "" && (!Number.isFinite(wait) || wait < 0 || wait > 86400)) return "分红间隔需在 0-86400 秒（24 小时）";
       if (!/^0x[0-9a-fA-F]{40}$/.test(form.receiver || "")) return "请填写有效的接收钱包地址";
       if (form.rewardToken && !/^0x[0-9a-fA-F]{40}$/.test(form.rewardToken)) return "分红代币地址无效（留空则用 USDT）";
     }
@@ -279,7 +292,7 @@ export default function Launch() {
       if (form.buyTaxBps > BPS_MAX || form.sellTaxBps > BPS_MAX || form.transferTaxBps > BPS_MAX) return "买卖/转账税最高 25%";
       if (form.addLiquidityTaxBps > BPS_MAX || form.removeLiquidityTaxBps > BPS_MAX) return "LP 税最高 25%";
       if (form.launchProtectionTaxBps > BPS_MAX) return "发射保护税最高 25%";
-      if (splitTotal > SPLIT_MAX) return "税收分配总和不能超过 100%";
+      if (allocationTotal > SPLIT_MAX) return "LP/分红/燃烧总和不能超过 100%（Fund 自动取剩余）";
     }
     return null;
   };
@@ -346,7 +359,7 @@ export default function Launch() {
         symbol: form.symbol.trim(),
         metadataUri,
         totalSupply: BigInt(totalSupplyNum),
-        mintCount: BigInt(Number(form.mintCount)),
+        mintCount: BigInt(totalMintCount),
         mintPrice: parseBNB(form.mintPrice),
         maxMintPerWallet: BigInt(Number(form.maxMintPerWallet) || 0),
         paymentToken: ZeroAddress,
@@ -361,19 +374,19 @@ export default function Launch() {
         removeLiquidityTaxBps: form.removeLiquidityTaxBps,
         launchProtectionTaxBps: form.launchProtectionTaxBps,
         launchProtectionBlocks: Number(form.launchProtectionBlocks) || 0,
-        claimWait: Math.round((Number(form.claimWaitHours) || 0) * 3600),
-        fundFeeBps: form.fundFeeBps,
+        claimWait: Number(form.claimWaitSeconds) || 0,
+        fundFeeBps: fundAutoBps,
         lpFeeBps: form.lpFeeBps,
         dividendFeeBps: form.dividendFeeBps,
         burnFeeBps: form.burnFeeBps,
-        whitelistMintCount: form.whitelistEnabled ? BigInt(Number(form.whitelistMintCount) || 0) : BigInt(0),
-        whitelistEnabled: form.whitelistEnabled,
+        whitelistMintCount: whitelistEnabled ? BigInt(Number(form.whitelistMintCount) || 0) : BigInt(0),
+        whitelistEnabled,
       };
       const deployed = await deployMintLaunch(signer, params, suffix, parseUnits(creationFee, 18));
       setResult(deployed);
       toast("发射成功，已自动排队开源验证", "ok");
       // 白名单地址批量写入金库（可选，失败不阻塞成功面板）
-      if (deployed.vaultAddress && form.whitelistEnabled && form.whitelistAddresses.trim()) {
+      if (deployed.vaultAddress && whitelistEnabled && form.whitelistAddresses.trim()) {
         const accounts = parseWhitelistAddresses(form.whitelistAddresses);
         if (accounts.length > 0) {
           void writeWhitelist(signer, deployed.vaultAddress, accounts);
@@ -573,16 +586,36 @@ export default function Launch() {
                 <h3>供应 / Supply</h3>
                 <div className="w-grid-3">
                   <div className="field">
-                    <label>总供应量</label>
+                    <label>发行总量</label>
                     <input className="input" type="number" min={1} value={form.totalSupply} onChange={(e) => set("totalSupply", e.target.value)} />
                   </div>
                   <div className="field">
-                    <label>可铸造数量</label>
-                    <input className="input" type="number" min={1} value={form.mintCount} onChange={(e) => set("mintCount", e.target.value)} />
+                    <label>单次价格 ({config.nativeSymbol})</label>
+                    <input className="input" type="number" step="0.0000001" min={0} value={form.mintPrice} onChange={(e) => set("mintPrice", e.target.value)} />
                   </div>
                   <div className="field">
-                    <label>铸造单价 ({config.nativeSymbol})</label>
-                    <input className="input" type="number" step="0.0000001" min={0} value={form.mintPrice} onChange={(e) => set("mintPrice", e.target.value)} />
+                    <label>总铸造次数（= 公开 + 白名单）</label>
+                    <input className="input" value={totalMintCount.toLocaleString()} readOnly style={{ background: "var(--rule)" }} />
+                  </div>
+                  <div className="field">
+                    <label>公开铸造次数</label>
+                    <input className="input" type="number" min={0} value={form.publicMintCount} onChange={(e) => set("publicMintCount", e.target.value.replace(/\D/g, ""))} />
+                  </div>
+                  <div className="field">
+                    <label>白名单铸造次数</label>
+                    <input
+                      className="input"
+                      type="number"
+                      min={0}
+                      value={form.whitelistMintCount}
+                      onChange={(e) => {
+                        const v = e.target.value.replace(/\D/g, "");
+                        set("whitelistMintCount", v);
+                        if (Number(v) > 0) set("whitelistEnabled", true);
+                        if (Number(v) <= 0) set("whitelistEnabled", false);
+                      }}
+                    />
+                    <div className="input-hint">填写大于 0 即自动启用白名单阶段。</div>
                   </div>
                 </div>
                 <div className="serif" style={{ color: "var(--muted)", fontSize: 14, marginTop: 16 }}>
@@ -598,22 +631,26 @@ export default function Launch() {
                     <input className="input" type="number" min={0} value={form.maxMintPerWallet} onChange={(e) => set("maxMintPerWallet", e.target.value)} />
                   </div>
                   <div className="field">
-                    <label>退款等待（小时，0 = 关闭）</label>
-                    <input className="input" type="number" min={0} max={24} value={form.claimWaitHours} onChange={(e) => set("claimWaitHours", e.target.value)} />
-                    <div className="input-hint">{form.claimWaitHours || 0} 小时内未售罄可全额退款；过期自动锁池。</div>
+                    <label>分红间隔（秒，0 = 关闭）</label>
+                    <input className="input" type="number" min={0} max={86400} value={form.claimWaitSeconds} onChange={(e) => set("claimWaitSeconds", e.target.value.replace(/\D/g, ""))} />
+                    <div className="input-hint">未售罄且超过该时长后，参与者可 claimRefund 全额退款。</div>
                   </div>
                 </div>
-                <label className="flex center gap-12" style={{ marginTop: 24, cursor: "pointer" }}>
-                  <input type="checkbox" checked={form.whitelistEnabled} onChange={(e) => set("whitelistEnabled", e.target.checked)} style={{ width: 16, height: 16, accentColor: "#0a0a0a" }} />
-                  <span className="mono" style={{ fontSize: 12, letterSpacing: ".12em", textTransform: "uppercase" }}>启用白名单阶段</span>
-                </label>
-                {form.whitelistEnabled && (
-                  <div className="field" style={{ marginTop: 16, maxWidth: 320 }}>
-                    <label>白名单供应量</label>
-                    <input className="input" type="number" min={1} value={form.whitelistMintCount} onChange={(e) => set("whitelistMintCount", e.target.value)} />
+                <div className="w-grid-2" style={{ marginTop: 24 }}>
+                  <div>
+                    <label className="mono" style={{ fontSize: 12, letterSpacing: ".12em", textTransform: "uppercase" }}>白名单阶段</label>
+                    <div className="serif" style={{ color: "var(--muted)", fontSize: 14, marginTop: 6 }}>
+                      {whitelistEnabled ? "已启用（白名单次数 {form.whitelistMintCount || 0}）" : "关闭——白名单次数填写大于 0 即自动开启"}
+                    </div>
                   </div>
-                )}
-                {form.whitelistEnabled && (
+                  <div className="flex center" style={{ justifyContent: "flex-end" }}>
+                    <label className="flex center gap-12" style={{ cursor: "pointer" }}>
+                      <input type="checkbox" checked={whitelistEnabled} onChange={(e) => set("whitelistEnabled", e.target.checked)} style={{ width: 16, height: 16, accentColor: "#0a0a0a" }} />
+                      <span className="mono" style={{ fontSize: 12, letterSpacing: ".12em", textTransform: "uppercase" }}>启用白名单阶段</span>
+                    </label>
+                  </div>
+                </div>
+                {whitelistEnabled && (
                   <div className="field" style={{ marginTop: 16 }}>
                     <label>白名单地址（每行一个，部署后自动写入金库）</label>
                     <textarea
@@ -696,16 +733,24 @@ export default function Launch() {
               </div>
 
               <div className="w-section">
-                <h3>分红分配 / Distribution (sum ≤ 100%)</h3>
+                <h3>分红分配 / Distribution (Fund 自动 = 100% − LP − 分红 − 燃烧)</h3>
+                <p className="lede">拖动下方三项，Fund 资金池自动取剩余，四档总和恒为 100%（对齐合约）。</p>
                 <div className="w-grid-2">
-                  <Range label="Fund 资金池" value={form.fundFeeBps} onChange={(v) => set("fundFeeBps", v)} max={SPLIT_MAX} />
                   <Range label="LP 回流" value={form.lpFeeBps} onChange={(v) => set("lpFeeBps", v)} max={SPLIT_MAX} />
                   <Range label="持有者分红" value={form.dividendFeeBps} onChange={(v) => set("dividendFeeBps", v)} max={SPLIT_MAX} />
                   <Range label="通缩燃烧" value={form.burnFeeBps} onChange={(v) => set("burnFeeBps", v)} max={SPLIT_MAX} />
                 </div>
                 <div className="flex between center" style={{ marginTop: 24, paddingTop: 16, borderTop: "1px solid var(--rule)" }}>
-                  <span className="mono" style={{ fontSize: 11, letterSpacing: ".12em", textTransform: "uppercase", color: "var(--muted)" }}>分配总和</span>
-                  <span className="mono" style={{ fontSize: 22, color: splitTotal > SPLIT_MAX ? "var(--red)" : "var(--ink)" }}>{(splitTotal / 100).toFixed(2)}%</span>
+                  <span className="mono" style={{ fontSize: 11, letterSpacing: ".12em", textTransform: "uppercase", color: "var(--muted)" }}>Fund 资金池（自动）</span>
+                  <span className="mono" style={{ fontSize: 22, color: allocationTotal > SPLIT_MAX ? "var(--red)" : "var(--gold-deep)" }}>
+                    {(Math.max(0, fundAutoBps) / 100).toFixed(2)}%
+                  </span>
+                </div>
+                <div className="flex between center" style={{ marginTop: 12 }}>
+                  <span className="mono" style={{ fontSize: 11, letterSpacing: ".12em", textTransform: "uppercase", color: "var(--muted)" }}>LP + 分红 + 燃烧</span>
+                  <span className="mono" style={{ fontSize: 14, color: allocationTotal > SPLIT_MAX ? "var(--red)" : "var(--ink)" }}>
+                    {(allocationTotal / 100).toFixed(2)}%{allocationTotal > SPLIT_MAX ? " · 超限，请回调" : " · 剩余自动进 Fund"}
+                  </span>
                 </div>
               </div>
             </>
@@ -737,11 +782,11 @@ export default function Launch() {
                       <div className="dl-row"><span>Name</span><b>{form.name || "—"} ({form.symbol || "—"})</b></div>
                       <div className="dl-row"><span>Concept</span><b>{CONCEPTS.find((c) => c.key === form.conceptKey)?.label}</b></div>
                       <div className="dl-row"><span>Total Supply</span><b className="mono">{form.totalSupply}</b></div>
-                      <div className="dl-row"><span>Mintable</span><b className="mono">{form.mintCount}</b></div>
+                      <div className="dl-row"><span>Mintable</span><b className="mono">{totalMintCount.toLocaleString()} 次（公开 {Number(form.publicMintCount) || 0} · 白名单 {Number(form.whitelistMintCount) || 0}）</b></div>
                       <div className="dl-row"><span>Price</span><b className="mono">{form.mintPrice} {config.nativeSymbol}</b></div>
                       <div className="dl-row"><span>Per Mint</span><b className="mono">{perMint.toLocaleString()} 代币</b></div>
                       <div className="dl-row"><span>LP Reserve</span><b className="mono">50% 预留做市</b></div>
-                      <div className="dl-row"><span>Refund</span><b className="mono">{form.claimWaitHours || 0}h 窗口</b></div>
+                      <div className="dl-row"><span>Refund</span><b className="mono">{Number(form.claimWaitSeconds) > 0 ? `${form.claimWaitSeconds}s 后可退` : "关闭"}</b></div>
                       <div className="dl-row"><span>Receiver</span><b className="mono">{fmtShort(form.receiver || "—")}</b></div>
                       <div className="dl-row"><span>Reward Token</span><b className="mono">{fmtShort(normalizeRewardToken(form.rewardToken))}</b></div>
                       <div className="dl-row"><span>Threshold</span><b className="mono">{Number(form.rewardThreshold) > 0 ? form.rewardThreshold : "无门槛"}</b></div>
