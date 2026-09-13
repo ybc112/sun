@@ -358,7 +358,7 @@ export default function Launch() {
         name: form.name.trim(),
         symbol: form.symbol.trim(),
         metadataUri,
-        totalSupply: BigInt(totalSupplyNum),
+        totalSupply: parseUnits(String(totalSupplyNum), 18),
         mintCount: BigInt(totalMintCount),
         mintPrice: parseBNB(form.mintPrice),
         maxMintPerWallet: BigInt(Number(form.maxMintPerWallet) || 0),
