@@ -90,17 +90,21 @@ function ProjectCard({ project, index }: { project: LaunchProject; index: number
 
   return (
     <Link to={`/project/${project.address}`} className="project-card">
-      <div className="pc-head">
+      <div className="pc-head" style={{ marginBottom: 18, alignItems: "center" }}>
         <span className="pc-no">№ {String(index + 1).padStart(3, "0")}</span>
         <StatusBadge status={status} />
       </div>
-      {project.avatar ? (
-        <img src={project.avatar} alt="" style={{ width: 48, height: 48, border: "1px solid var(--ink)", borderRadius: 2, objectFit: "cover", marginBottom: 12 }} />
-      ) : (
-        <div style={{ width: 48, height: 48, border: "1px solid var(--ink)", display: "grid", placeItems: "center", fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--muted)", marginBottom: 12 }}>{project.symbol.slice(0, 4) || "TKN"}</div>
-      )}
-      <div className="pc-name">{project.name || "Unnamed"}</div>
-      <div className="pc-symbol">${project.symbol} · {concept.label}</div>
+      <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 14 }}>
+        {project.avatar ? (
+          <img src={project.avatar} alt="" style={{ width: 48, height: 48, border: "1px solid var(--ink)", borderRadius: 2, objectFit: "cover", flex: "none" }} />
+        ) : (
+          <div style={{ width: 48, height: 48, border: "1px solid var(--ink)", display: "grid", placeItems: "center", fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--muted)", flex: "none" }}>{project.symbol.slice(0, 4) || "TKN"}</div>
+        )}
+        <div style={{ minWidth: 0 }}>
+          <div className="pc-name" style={{ fontSize: 20, marginBottom: 4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{project.name || "Unnamed"}</div>
+          <div className="pc-symbol">${project.symbol} · {concept.label}</div>
+        </div>
+      </div>
       {project.description && (
         <p className="serif" style={{ fontSize: 13, color: "var(--muted)", marginTop: 8, lineHeight: 1.5, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
           {project.description}

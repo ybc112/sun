@@ -4,7 +4,7 @@ import { Contract } from "ethers";
 import { useWallet } from "../wallet";
 import { useToast } from "../components/Toast";
 import { useProjectDetail } from "../lib/data";
-import { AddressChip, ProgressBar, StatusBadge } from "../components/ui";
+import { ProgressBar, StatusBadge } from "../components/ui";
 import { readVault, switchToChain, vaultAbi, publicProvider } from "../lib/chain";
 import { conceptDisplay } from "../lib/concepts";
 import { fmtCountdown, fmtNumber, fmtPrice } from "../lib/format";
@@ -316,22 +316,109 @@ export default function ProjectDetail() {
               分红门槛 {fmtNumber(project.rewardThreshold, 18, 0)}
             </p>
           )}
-          <div style={{ display: "flex", gap: 20, marginTop: 20, flexWrap: "wrap", alignItems: "center" }}>
-            <AddressChip address={project.address} suffix={`…${project.address.slice(-4)}`} link={`${EXPLORER_BASE}/token/${project.address}`} />
-            <CopyButton text={project.address} />
-            <span className="serif" style={{ color: "var(--muted)", fontSize: 14 }}>代币合约</span>
-          </div>
-          <div style={{ display: "flex", gap: 20, marginTop: 12, flexWrap: "wrap", alignItems: "center" }}>
-            <AddressChip address={project.vault} link={`${EXPLORER_BASE}/address/${project.vault}`} />
-            <CopyButton text={project.vault} />
-            <span className="serif" style={{ color: "var(--muted)", fontSize: 14 }}>金库</span>
-          </div>
         </div>
       </div>
 
       {/* 主区 */}
       <div className="detail-grid">
         <div>
+          {/* 信息四格：价格 / 上限 / 代币合约 / 金库 */}
+          <div className="w-grid-2" style={{ rowGap: 24, columnGap: 24, marginBottom: 44 }}>
+            <div style={{ border: "1px solid var(--line)", padding: "18px 20px" }}>
+              <div className="mono" style={{ fontSize: 10, letterSpacing: ".14em", textTransform: "uppercase", color: "var(--muted)", marginBottom: 10 }}>单次价格</div>
+              <div className="mono" style={{ fontSize: 20, color: "var(--gold-deep)" }}>
+                {vault ? fmtPrice(vault.mintPrice) : "—"} <small style={{ fontSize: 12, color: "var(--muted)" }}>{config.nativeSymbol}</small>
+              </div>
+            </div>
+            <div style={{ border: "1px solid var(--line)", padding: "18px 20px" }}>
+              <div className="mono" style={{ fontSize: 10, letterSpacing: ".14em", textTransform: "uppercase", color: "var(--muted)", marginBottom: 10 }}>单钱包上限</div>
+              <div className="mono" style={{ fontSize: 20, color: "var(--paper)" }}>
+                {vault && vault.maxMintPerWallet > zero ? `${vault.maxMintPerWallet.toLocaleString()} 份` : "不限"}
+              </div>
+            </div>
+            <div style={{ border: "1px solid var(--line)", padding: "18px 20px" }}>
+              <div className="mono" style={{ fontSize: 10, letterSpacing: ".14em", textTransform: "uppercase", color: "var(--muted)", marginBottom: 10 }}>代币合约</div>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                <span
+                  className="addr"
+                  title="点击复制"
+                  onClick={() => void navigator.clipboard?.writeText(project.address).catch(() => {})}
+                >
+                  {project.address.slice(0, 8)}…{project.address.slice(-6)}
+                </span>
+                <CopyButton text={project.address} />
+                <a className="mono" style={{ fontSize: 12, color: "var(--gold-deep)", borderBottom: "1px solid var(--gold-deep)" }} href={`${EXPLORER_BASE}/token/${project.address}`} target="_blank" rel="noreferrer">↗</a>
+              </div>
+            </div>
+            <div style={{ border: "1px solid var(--line)", padding: "18px 20px" }}>
+              <div className="mono" style={{ fontSize: 10, letterSpacing: ".14em", textTransform: "uppercase", color: "var(--muted)", marginBottom: 10 }}>金库</div>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                <span
+                  className="addr"
+                  title="点击复制"
+                  onClick={() => void navigator.clipboard?.writeText(project.vault).catch(() => {})}
+                >
+                  {project.vault.slice(0, 8)}…{project.vault.slice(-6)}
+                </span>
+                <CopyButton text={project.vault} />
+                <a className="mono" style={{ fontSize: 12, color: "var(--gold-deep)", borderBottom: "1px solid var(--gold-deep)" }} href={`${EXPLORER_BASE}/address/${project.vault}`} target="_blank" rel="noreferrer">↗</a>
+              </div>
+            </div>
+          </div>
+
+          {vault && !vault.finalized && (
+            <div style={{ marginBottom: 44 }}>
+              <div className="flex between center" style={{ marginBottom: 12 }}>
+                <span className="kicker" style={{ margin: 0 }}>Whitelist · 白名单管理</span>
+                <button
+                  className="btn btn-sm"
+                  onClick={() => void handleToggleWhitelist()}
+                  disabled={!isCreator || togglingWl || !chainId || chainId !== config.chainId}
+                  title={isCreator ? "" : "仅创建者（金库 Owner）可操作"}
+                >
+                  {togglingWl
+                    ? "广播中…"
+                    : vault.whitelistEnabled
+                      ? "关闭白名单"
+                      : "开启白名单"}
+                </button>
+              </div>
+              <p className="serif" style={{ color: "var(--muted)", fontSize: 14, marginBottom: 16 }}>
+                {isCreator
+                  ? `你是创建者（金库 Owner）。写入白名单地址后，对应钱包即可在白名单阶段 Mint。当前白名单阶段${vault.whitelistEnabled ? "已开启" : "已关闭"}。`
+                  : "白名单管理仅创建者（金库 Owner）可见可操作。其他用户可在此本地查看配额与进度。"}
+              </p>
+              <div className="mono" style={{ fontSize: 12, color: "var(--muted)", letterSpacing: ".06em", marginBottom: 16 }}>
+                已添加 {wlAllowance !== null ? wlAllowance.toLocaleString() : "—"} 个地址 · 配额 {project.whitelistMintCount.toLocaleString()} 次 · 已售 {vault.whitelistMintedCount.toLocaleString()} 次
+              </div>
+              {isCreator && (
+                <>
+                  <textarea
+                    className="input mono"
+                    style={{ minHeight: 110, fontSize: 13 }}
+                    placeholder={"0x....\n0x....\n（每行一个，最多 200 个；已写入的地址重复填入会跳过/覆盖）"}
+                    value={wlInput}
+                    onChange={(e) => {
+                      setWlInput(e.target.value);
+                      setWlCount(parseWl(e.target.value).length);
+                    }}
+                  />
+                  <div className="input-hint" style={{ marginTop: 8 }}>
+                    {wlCount > 0 ? `已解析 ${wlCount} 个有效地址` : "支持逗号 / 空格 / 换行分隔，单次最多 200 个"}
+                  </div>
+                  <button
+                    className="btn btn-primary"
+                    style={{ marginTop: 12 }}
+                    onClick={() => void handleSaveWhitelist()}
+                    disabled={savingWl || !chainId || chainId !== config.chainId}
+                  >
+                    {savingWl ? "广播中…" : wlCount > 0 ? `写入 ${wlCount} 个地址 →` : "写入白名单 →"}
+                  </button>
+                </>
+              )}
+            </div>
+          )}
+
           {/* 数据列表 */}
           <div className="kicker" style={{ marginBottom: 24 }}>Vault · 金库</div>
           <div className="dl-list">
@@ -355,53 +442,6 @@ export default function ProjectDetail() {
             <div className="dl-row"><span>Refund Window</span><b className="mono">{project.claimWait ? `${project.claimWait}s` : "Disabled"}</b></div>
             <div className="dl-row"><span>Distribution · Fund / LP / Div / Burn</span><b className="mono">{project.fundFeeBps / 100}% / {project.lpFeeBps / 100}% / {project.dividendFeeBps / 100}% / {project.burnFeeBps / 100}%</b></div>
           </div>
-
-          {isCreator && vault && !vault.finalized && (
-            <div style={{ marginTop: 48, borderTop: "1px solid var(--rule)", paddingTop: 32, maxWidth: 560 }}>
-              <div className="flex between center" style={{ marginBottom: 12 }}>
-                <span className="kicker" style={{ margin: 0 }}>Whitelist · 白名单管理</span>
-                <button
-                  className="btn btn-sm"
-                  onClick={() => void handleToggleWhitelist()}
-                  disabled={togglingWl || !chainId || chainId !== config.chainId}
-                >
-                  {togglingWl
-                    ? "广播中…"
-                    : vault.whitelistEnabled
-                      ? "关闭白名单"
-                      : "开启白名单"}
-                </button>
-              </div>
-              <p className="serif" style={{ color: "var(--muted)", fontSize: 14, marginBottom: 16 }}>
-                你是创建者（金库 Owner）。当前白名单阶段
-                {vault.whitelistEnabled ? "已开启" : "已关闭"}。写入白名单后，对应钱包即可在白名单阶段 Mint。
-              </p>
-              <div className="mono" style={{ fontSize: 12, color: "var(--muted)", letterSpacing: ".06em", marginBottom: 16 }}>
-                已添加 {wlAllowance !== null ? wlAllowance.toLocaleString() : "—"} 个地址 · 配额 {project.whitelistMintCount.toLocaleString()} 次 · 已售 {vault.whitelistMintedCount.toLocaleString()} 次
-              </div>
-              <textarea
-                className="input mono"
-                style={{ minHeight: 110, fontSize: 13 }}
-                placeholder={"0x....\n0x....\n（每行一个，最多 200 个；已写入的地址重复填入会跳过/覆盖，使用前可先确认链上列表）"}
-                value={wlInput}
-                onChange={(e) => {
-                  setWlInput(e.target.value);
-                  setWlCount(parseWl(e.target.value).length);
-                }}
-              />
-              <div className="input-hint" style={{ marginTop: 8 }}>
-                {wlCount > 0 ? `已解析 ${wlCount} 个有效地址` : "支持逗号 / 空格 / 换行分隔"}
-              </div>
-              <button
-                className="btn btn-primary"
-                style={{ marginTop: 12 }}
-                onClick={() => void handleSaveWhitelist()}
-                disabled={savingWl || !chainId || chainId !== config.chainId}
-              >
-                {savingWl ? "广播中…" : wlCount > 0 ? `写入 ${wlCount} 个地址 →` : "写入白名单 →"}
-              </button>
-            </div>
-          )}
 
           <p className="serif" style={{ color: "var(--muted)", fontSize: 13, lineHeight: 1.7, marginTop: 32, maxWidth: 640 }}>
             参与即表示你理解 Meme 代币的风险：价格可能归零、退款仅在未售罄且退款窗口内生效、锁池发生在售罄 finalize 时。
