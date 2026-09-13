@@ -170,6 +170,20 @@ export function useProjects(pageSize = 9) {
       const parsed: LaunchProject[] = rawList.map((item, i) =>
         parseProject(item, addresses[i] || ""),
       );
+      // 列表页统一回读链上代币 name/symbol（工厂 getProject 不返回名称字段）
+      await Promise.all(
+        parsed.map(async (p) => {
+          if (p.name) return;
+          try {
+            const t = readToken(p.address);
+            const [n, s] = await Promise.all([t.name(), t.symbol()]);
+            p.name = String(n || "");
+            p.symbol = String(s || "");
+          } catch {
+            /* 忽略 */
+          }
+        }),
+      );
       setProjects((prev) => {
         const seen = new Set(prev.map((p) => p.address.toLowerCase()));
         return [...prev, ...parsed.filter((p) => seen.has(p.address.toLowerCase()) === false)];
