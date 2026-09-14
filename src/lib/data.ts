@@ -5,6 +5,19 @@ import { conceptOf } from "./concepts";
 
 const zero = BigInt(0);
 
+/** 测试币地址（小写）：不在「已发射」列表中展示，避免混入正式列表 */
+const HIDDEN_TOKENS = new Set<string>([
+  "0xa92c107519edfcb56389513238c11597b3bf7777",
+  "0xa01f9443755e0eb72af4d5b59fd69c0a5c8e7777",
+  "0x1be01504c13052e7840393b046d39f8c723e7777",
+  "0x8d93f740b353c89b7d8fb66f965e172686377777",
+  "0x93f60922234d31cdcf58e80bb5ef5e8d5c587777",
+  "0xbf9643d07252be91e3af19876fc133d23eb57777",
+]);
+
+/** 是否为不上架的测试币 */
+export const isHiddenToken = (address: string) => HIDDEN_TOKENS.has(String(address ?? "").toLowerCase());
+
 /** 解析链上 metadataUri（KimiMint 约定：可直接 JSON.parse 的对象，含 avatar/description/website/telegram/x） */
 export function parseMetadata(metadataUri: string): {
   description: string;
@@ -147,6 +160,8 @@ export function useProjects(pageSize = 9) {
   const [cursor, setCursor] = useState(0);
   const [total, setTotal] = useState(0);
   const [done, setDone] = useState(false);
+  /** 已加载页中命中的测试币数量，用于从展示总数里扣除 */
+  const hiddenCount = useRef(0);
 
   const loadMore = useCallback(async () => {
     if (loading || done) return;
@@ -155,7 +170,6 @@ export function useProjects(pageSize = 9) {
     try {
       const f = readFactory();
       const length = Number(await f.allTokensLength());
-      setTotal(length);
       if (cursor >= length) {
         setDone(true);
         setLoading(false);
@@ -167,9 +181,11 @@ export function useProjects(pageSize = 9) {
       for (let i = cursor; i < Math.min(cursor + pageSize, length); i += 1) {
         addresses.push(String(await f.allTokens(i)));
       }
-      const parsed: LaunchProject[] = rawList.map((item, i) =>
-        parseProject(item, addresses[i] || ""),
-      );
+      const parsed: LaunchProject[] = rawList
+        .map((item, i) => parseProject(item, addresses[i] || ""))
+        .filter((p) => !isHiddenToken(p.address));
+      hiddenCount.current += addresses.filter(isHiddenToken).length;
+      setTotal(Math.max(0, length - hiddenCount.current));
       // 列表页统一回读链上代币 name/symbol（工厂 getProject 不返回名称字段）
       await Promise.all(
         parsed.map(async (p) => {
